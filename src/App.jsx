@@ -1173,13 +1173,17 @@ export default function App() {
                             Dictamen {auditSortBy === 'status_evaluacion' && (auditSortOrder === 'asc' ? '▲' : '▼')}
                           </div>
                         </th>
-                        <th className="py-3.5 px-4 text-center">Desglose</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
                       {filteredAuditItems.map(item => (
-                        <tr key={item.item_id} className="hover:bg-slate-50/80">
-                          <td className="py-3 px-4 max-w-xs truncate font-medium text-slate-900">
+                        <tr 
+                          key={item.item_id} 
+                          onClick={() => setInspectingAuditItem(item)}
+                          className="hover:bg-red-50/40 cursor-pointer transition-colors group"
+                          title="Haz clic para ver el desglose detallado de costos"
+                        >
+                          <td className="py-3 px-4 max-w-xs truncate font-medium text-slate-900 group-hover:text-red-950">
                             <div>{item.title}</div>
                             <div className="text-[10px] text-slate-400 font-mono">SKU: {item.sku} | ID: {item.item_id}</div>
                           </td>
@@ -1196,16 +1200,6 @@ export default function App() {
                             }`}>
                               {item.status_evaluacion}
                             </span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <button
-                              onClick={() => setInspectingAuditItem(item)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 font-semibold text-xs transition-colors border border-slate-200 hover:border-red-200 shadow-sm"
-                              title="Ver desglose detallado de costos"
-                            >
-                              <Eye className="w-3.5 h-3.5 text-slate-500 hover:text-red-600" />
-                              <span>Detalle</span>
-                            </button>
                           </td>
                         </tr>
                       ))}
