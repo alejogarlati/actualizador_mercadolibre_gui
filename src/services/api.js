@@ -48,9 +48,21 @@ export const fetchSyncStatus = async () => {
   }
 };
 
-export const fetchItems = async (limit = 50) => {
+export const fetchItems = async (limit = 50, forceRefresh = false) => {
   try {
-    const res = await axios.get(`${API_BASE_URL}/items?limit=${limit}`);
+    const url = forceRefresh 
+      ? `${API_BASE_URL}/items?limit=${limit}&force_refresh=true`
+      : `${API_BASE_URL}/items?limit=${limit}`;
+    const res = await axios.get(url);
+    return res.data;
+  } catch (err) {
+    return [];
+  }
+};
+
+export const refreshItemsCache = async () => {
+  try {
+    const res = await axios.post(`${API_BASE_URL}/items/refresh`);
     return res.data;
   } catch (err) {
     return [];
@@ -77,11 +89,16 @@ export const saveRules = async (rules) => {
 };
 
 export const fetchAuditReport = async (tolerancePct = 5.0) => {
+  const res = await axios.get(`${API_BASE_URL}/audit?tolerance_pct=${tolerancePct}`);
+  return res.data;
+};
+
+export const fetchLogs = async (lines = 30) => {
   try {
-    const res = await axios.get(`${API_BASE_URL}/audit?tolerance_pct=${tolerancePct}`);
-    return res.data;
+    const res = await axios.get(`${API_BASE_URL}/logs?lines=${lines}`);
+    return res.data.logs || [];
   } catch (err) {
-    return null;
+    return ['⚠️ No se pudo conectar al servidor de logs.'];
   }
 };
 

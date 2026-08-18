@@ -1,16 +1,31 @@
-# React + Vite
+# App GUI Desktop - Actualizador Mercado Libre
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Interfaz gráfica de escritorio moderna desarrollada con **Electron**, **React 19**, **Vite** y **Tailwind CSS v4** para la gestión y sincronización de precios con la API de Mercado Libre.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🎨 Características de la Interfaz Visual
 
-## React Compiler
+- **Diseño Moderno:** Tema off-white profesional con acento en rojo corporativo (`#dc2626`).
+- **Estados de Carga y Feedback:** Animaciones de carga, spinners, toasters interactivos y modales de confirmación para acciones críticas.
+- **Filtrado y Ordenamiento Multicolumna:** 
+  - Búsqueda en tiempo real por SKU, Título o ID MeLi.
+  - Ordenamiento ascendente/descendente en todas las columnas.
+  - Filtro por estado (`Activas / Pausadas`), dictamen de auditoría y disponibilidad de SKU (`Con SKU / Sin SKU N/A`).
+- **Acordeón Desplegable para Variaciones:** Visualización de productos padres con variantes asociadas (Color, Medida, Talle).
+- **Modal de Edición Multi-campo:** Edición instantánea de SKU, Título, Estado y Precios.
+- **Mini Console CLI:** Visualizador integrado de logs de consola del backend en la barra lateral.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🛠️ Comandos Disponibles
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+### Modo Desarrollo (Desktop Electron)
+```bash
+npm run electron:dev
+```
+
+### Compilar Proyecto
+```bash
+npm run build
+```
