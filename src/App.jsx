@@ -30,7 +30,10 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronRight,
-  Clock
+  Clock,
+  Eye,
+  DollarSign,
+  Truck
 } from 'lucide-react';
 import { 
   checkHealth, 
@@ -161,6 +164,7 @@ export default function App() {
   const [auditReport, setAuditReport] = useState(null);
   const [auditLoading, setAuditLoading] = useState(false);
   const [tolerancePct, setTolerancePct] = useState(5.0);
+  const [inspectingAuditItem, setInspectingAuditItem] = useState(null);
 
   // Fechas y horas de última actualización persistentes
   const [itemsLastUpdated, setItemsLastUpdated] = useState(() => localStorage.getItem('meli_items_last_updated') || null);
@@ -1169,6 +1173,7 @@ export default function App() {
                             Dictamen {auditSortBy === 'status_evaluacion' && (auditSortOrder === 'asc' ? '▲' : '▼')}
                           </div>
                         </th>
+                        <th className="py-3.5 px-4 text-center">Desglose</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -1191,6 +1196,16 @@ export default function App() {
                             }`}>
                               {item.status_evaluacion}
                             </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <button
+                              onClick={() => setInspectingAuditItem(item)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 font-semibold text-xs transition-colors border border-slate-200 hover:border-red-200 shadow-sm"
+                              title="Ver desglose detallado de costos"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-slate-500 hover:text-red-600" />
+                              <span>Detalle</span>
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1423,6 +1438,163 @@ export default function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DESGLOSE DE COSTOS DE AUDITORÍA */}
+      {inspectingAuditItem && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
+            {/* CABECERA */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-4">
+              <div className="pr-4">
+                <div className="flex items-center gap-2">
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                    inspectingAuditItem.status_evaluacion === 'OK' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                    inspectingAuditItem.status_evaluacion === 'BAJO' ? 'bg-red-50 text-red-700 border border-red-200' :
+                    inspectingAuditItem.status_evaluacion === 'ALTO' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                    'bg-slate-100 text-slate-600 border border-slate-200'
+                  }`}>
+                    {inspectingAuditItem.status_evaluacion === 'OK' ? '🟢 En Rango Rentable' :
+                     inspectingAuditItem.status_evaluacion === 'BAJO' ? '🔴 Margen por Debajo del ERP' :
+                     inspectingAuditItem.status_evaluacion === 'ALTO' ? '🟡 Margen por Encima del ERP' : '⚪ Sin Coincidencia ERP'}
+                  </span>
+                  <span className="text-xs text-slate-400 font-mono">SKU: {inspectingAuditItem.sku || 'N/A'}</span>
+                </div>
+                <h3 className="font-bold text-base text-slate-900 mt-1 leading-snug">{inspectingAuditItem.title}</h3>
+                <p className="text-xs text-slate-400 font-mono mt-0.5">ID: {inspectingAuditItem.item_id}</p>
+              </div>
+              <button 
+                onClick={() => setInspectingAuditItem(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-50 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* RESUMEN DE IMPACTO EN MANO */}
+            <div className="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4">
+              <div>
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Precio Publicado en ML</span>
+                <span className="text-xl font-black text-slate-900">${inspectingAuditItem.price_ml.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider block">Neto Real Recibido</span>
+                <span className="text-xl font-black text-emerald-600">${inspectingAuditItem.neto_a_recibir.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+              </div>
+            </div>
+
+            {/* TABLA DE DEDUCCIONES Y COSTOS */}
+            <div className="flex flex-col gap-2">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Desglose de Deducciones y Cargos de Mercado Libre</h4>
+              <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 text-xs overflow-hidden">
+                
+                {/* COMISION DE VENTA */}
+                <div className="p-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                      <DollarSign className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-800 block">Comisión de Mercado Libre ({inspectingAuditItem.comision_porcentaje}%)</span>
+                      <span className="text-[10px] text-slate-400">Porcentaje por categoría oficial</span>
+                    </div>
+                  </div>
+                  <span className="font-bold text-red-600 text-sm">-${inspectingAuditItem.comision_monto.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                </div>
+
+                {/* COSTO DE ENVIO GRATIS */}
+                <div className="p-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
+                      <Truck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-800 block">Costo de Envío Gratis (Vendedor)</span>
+                      <span className="text-[10px] text-slate-400">Con bonificación de reputación aplicada</span>
+                    </div>
+                  </div>
+                  <span className="font-bold text-red-600 text-sm">-${inspectingAuditItem.costo_envio.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                </div>
+
+                {/* RETENCIONES IMPOSITIVAS ESTIMADAS */}
+                <div className="p-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-purple-50 text-purple-600 rounded-lg">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <span className="font-bold text-slate-800 block">Impuestos y Retenciones (0.65%)</span>
+                      <span className="text-[10px] text-slate-400">IIBB / Percepciones estimadas de Mercado Libre</span>
+                    </div>
+                  </div>
+                  <span className="font-bold text-red-600 text-sm">-${(inspectingAuditItem.price_ml * 0.0065).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+
+                {/* CARGO FIJO SI APLICA */}
+                {inspectingAuditItem.cargo_fijo > 0 && (
+                  <div className="p-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 bg-slate-100 text-slate-600 rounded-lg">
+                        <DollarSign className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-800 block">Cargo Fijo por Ítem</span>
+                        <span className="text-[10px] text-slate-400">Para publicaciones de bajo monto</span>
+                      </div>
+                    </div>
+                    <span className="font-bold text-red-600 text-sm">-${inspectingAuditItem.cargo_fijo.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* COMPARATIVA CONTRA EL ERP */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-col gap-2.5">
+              <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Comparativa de Rentabilidad ERP</span>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-medium">Precio Mostrador ERP Esperado:</span>
+                <span className="font-bold text-slate-800">${inspectingAuditItem.precio_mostrador_erp ? inspectingAuditItem.precio_mostrador_erp.toLocaleString('es-AR', { minimumFractionDigits: 2 }) : 'N/A'}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200/60">
+                <span className="text-slate-500 font-medium">Diferencia Neta en Mano:</span>
+                <div className="flex items-center gap-2">
+                  <span className={`font-black text-sm ${
+                    inspectingAuditItem.diferencia_vs_mostrador >= 0 ? 'text-emerald-600' : 'text-red-600'
+                  }`}>
+                    {inspectingAuditItem.diferencia_vs_mostrador >= 0 ? '+' : ''}${inspectingAuditItem.diferencia_vs_mostrador.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                    inspectingAuditItem.diferencia_pct >= 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {inspectingAuditItem.diferencia_pct >= 0 ? '+' : ''}{inspectingAuditItem.diferencia_pct}%
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* ACCIONES DEL MODAL */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-1">
+              {inspectingAuditItem.permalink ? (
+                <a 
+                  href={inspectingAuditItem.permalink} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-700 font-semibold hover:underline"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Ver en Mercado Libre</span>
+                </a>
+              ) : <div />}
+              
+              <button 
+                onClick={() => setInspectingAuditItem(null)}
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors shadow-sm"
+              >
+                Cerrar Detalle
+              </button>
+            </div>
           </div>
         </div>
       )}
