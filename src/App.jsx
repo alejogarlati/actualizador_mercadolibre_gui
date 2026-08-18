@@ -405,7 +405,33 @@ export default function App() {
       return 0;
     });
 
-  const filteredAuditItems = (auditReport?.items || [])
+  // Evaluación y KPIs dinámicos en vivo según la tolerancia seleccionada
+  const dynamicAuditItems = (auditReport?.items || []).map(item => {
+    let evalStatus = "SIN_ERP";
+    if (item.precio_mostrador_erp && item.precio_mostrador_erp > 0) {
+      if (Math.abs(item.diferencia_pct) <= tolerancePct) {
+        evalStatus = "OK";
+      } else if (item.neto_a_recibir < item.precio_mostrador_erp) {
+        evalStatus = "BAJO";
+      } else {
+        evalStatus = "ALTO";
+      }
+    }
+    return {
+      ...item,
+      status_evaluacion: evalStatus
+    };
+  });
+
+  const dynamicAuditCounts = {
+    total: dynamicAuditItems.length,
+    en_rango_ok: dynamicAuditItems.filter(i => i.status_evaluacion === 'OK').length,
+    recibe_menos: dynamicAuditItems.filter(i => i.status_evaluacion === 'BAJO').length,
+    recibe_mas: dynamicAuditItems.filter(i => i.status_evaluacion === 'ALTO').length,
+    sin_erp: dynamicAuditItems.filter(i => i.status_evaluacion === 'SIN_ERP').length,
+  };
+
+  const filteredAuditItems = dynamicAuditItems
     .filter(item => {
       const matchSearch = 
         item.title?.toLowerCase().includes(auditSearchTerm.toLowerCase()) || 
@@ -1136,6 +1162,50 @@ export default function App() {
                 </button>
               </div>
             </div>
+
+            {auditReport && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Auditados</span>
+                    <span className="text-xl font-black text-slate-900">{dynamicAuditCounts.total}</span>
+                  </div>
+                  <div className="p-2.5 bg-slate-100 text-slate-600 rounded-xl">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">En Rango Rentable</span>
+                    <span className="text-xl font-black text-emerald-600">{dynamicAuditCounts.en_rango_ok}</span>
+                  </div>
+                  <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-red-600 uppercase tracking-wider block">Margen Bajo ERP</span>
+                    <span className="text-xl font-black text-red-600">{dynamicAuditCounts.recibe_menos}</span>
+                  </div>
+                  <div className="p-2.5 bg-red-50 text-red-600 rounded-xl border border-red-100">
+                    <TrendingDown className="w-5 h-5" />
+                  </div>
+                </div>
+
+                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                  <div>
+                    <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider block">Margen Alto ERP</span>
+                    <span className="text-xl font-black text-amber-600">{dynamicAuditCounts.recibe_mas}</span>
+                  </div>
+                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-100">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {auditReport && (
               <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
