@@ -29,7 +29,8 @@ import {
   Zap,
   HelpCircle,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Clock
 } from 'lucide-react';
 import { 
   checkHealth, 
@@ -161,6 +162,10 @@ export default function App() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [tolerancePct, setTolerancePct] = useState(5.0);
 
+  // Fechas y horas de última actualización persistentes
+  const [itemsLastUpdated, setItemsLastUpdated] = useState(() => localStorage.getItem('meli_items_last_updated') || null);
+  const [auditLastUpdated, setAuditLastUpdated] = useState(() => localStorage.getItem('meli_audit_last_updated') || null);
+
   const [healthRefreshing, setHealthRefreshing] = useState(false);
   const [backendLogs, setBackendLogs] = useState([]);
   const [cliExpanded, setCliExpanded] = useState(true);
@@ -236,6 +241,22 @@ export default function App() {
     setItemsLoading(true);
     const data = await fetchItems(50, forceRefresh);
     setItems(data);
+    
+    // Obtener la fecha/hora más reciente de los ítems o la actual si se forzó el refresh
+    const nowStr = new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'medium' });
+    let mostRecent = nowStr;
+    if (!forceRefresh && data && data.length > 0) {
+      const itemWithUpdate = data.find(it => it.updated_at || it.last_updated);
+      if (itemWithUpdate && itemWithUpdate.updated_at) {
+        try {
+          mostRecent = new Date(itemWithUpdate.updated_at).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'medium' });
+        } catch {
+          mostRecent = itemWithUpdate.updated_at;
+        }
+      }
+    }
+    setItemsLastUpdated(mostRecent);
+    localStorage.setItem('meli_items_last_updated', mostRecent);
     setItemsLoading(false);
   };
 
@@ -299,6 +320,9 @@ export default function App() {
       const data = await fetchAuditReport(tolerancePct);
       if (data && data.total_auditados !== undefined) {
         setAuditReport(data);
+        const auditTime = data.timestamp || new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'medium' });
+        setAuditLastUpdated(auditTime);
+        localStorage.setItem('meli_audit_last_updated', auditTime);
         addToast('info', 'Auditoría Finalizada', `Se auditaron ${data.total_auditados} publicaciones.`);
       } else {
         addToast('error', 'Error en Auditoría', 'El servidor no devolvió resultados válidos.');
@@ -748,14 +772,23 @@ export default function App() {
                 </div>
               </div>
 
-              <button 
-                onClick={() => loadItems(true)} 
-                disabled={itemsLoading}
-                className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${itemsLoading ? 'spinning' : ''}`} />
-                {itemsLoading ? 'Cargando...' : 'Refrescar Lista'}
-              </button>
+              <div className="flex items-center gap-3">
+                {itemsLastUpdated && (
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100/80 border border-slate-200 px-3 py-1.5 rounded-xl font-medium" title="Fecha y hora de la última sincronización de publicaciones">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Últ. sinc.: <strong className="text-slate-700">{itemsLastUpdated}</strong></span>
+                  </div>
+                )}
+
+                <button 
+                  onClick={() => loadItems(true)} 
+                  disabled={itemsLoading}
+                  className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 shadow-sm"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${itemsLoading ? 'spinning' : ''}`} />
+                  {itemsLoading ? 'Cargando...' : 'Refrescar Lista'}
+                </button>
+              </div>
             </div>
 
             {/* TABLA DE PUBLICACIONES */}
@@ -1081,14 +1114,23 @@ export default function App() {
                 </div>
               </div>
 
-              <button 
-                onClick={loadAuditReport} 
-                disabled={auditLoading}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${auditLoading ? 'spinning' : ''}`} />
-                {auditLoading ? 'Auditando...' : 'Ejecutar Auditoría'}
-              </button>
+              <div className="flex items-center gap-3">
+                {auditLastUpdated && (
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100/80 border border-slate-200 px-3 py-1.5 rounded-xl font-medium" title="Fecha y hora de la última auditoría ejecutada">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Últ. aud.: <strong className="text-slate-700">{auditLastUpdated}</strong></span>
+                  </div>
+                )}
+
+                <button 
+                  onClick={loadAuditReport} 
+                  disabled={auditLoading}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${auditLoading ? 'spinning' : ''}`} />
+                  {auditLoading ? 'Auditando...' : 'Ejecutar Auditoría'}
+                </button>
+              </div>
             </div>
 
             {auditReport && (
