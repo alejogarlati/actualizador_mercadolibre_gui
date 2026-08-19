@@ -497,8 +497,14 @@ export default function App() {
 
       {/* DIÁLOGO MODAL DE CONFIRMACIÓN */}
       {confirmDialog.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100 flex flex-col gap-4">
+        <div 
+          onClick={() => setConfirmDialog({ ...confirmDialog, open: false })}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100 flex flex-col gap-4"
+          >
             <div className="flex items-center gap-3 text-red-600">
               <div className="p-3 bg-red-50 rounded-xl">
                 <AlertTriangle className="w-6 h-6" />
@@ -1385,8 +1391,14 @@ export default function App() {
 
       {/* MODAL EDITAR PUBLICACIÓN */}
       {editingItem && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div 
+          onClick={() => setEditingItem(null)}
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          >
             <div className="bg-slate-900 px-6 py-4 flex items-center justify-between text-white">
               <div className="flex items-center gap-2.5">
                 <Edit3 className="w-5 h-5 text-red-500" />
@@ -1511,8 +1523,14 @@ export default function App() {
 
       {/* MODAL DESGLOSE DE COSTOS DE AUDITORÍA */}
       {inspectingAuditItem && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
+        <div 
+          onClick={() => setInspectingAuditItem(null)}
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col gap-5 max-h-[90vh] overflow-y-auto"
+          >
             {/* CABECERA */}
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div className="pr-4">
