@@ -1,38 +1,41 @@
-﻿# 📝 Changelog - GUI Desktop
+﻿# 📝 Changelog - Frontend GUI (Desktop Electron)
 
-Todos los cambios notables en la interfaz gráfica serán documentados en este archivo.
+Todos los cambios notables en la interfaz gráfica, componentes visuales y experiencia de usuario serán documentados en este archivo.
 
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-## 🗺️ Roadmap de Próximas Versiones
+## 🗺️ Roadmap de Próximas Versiones (Frontend)
 
 ### [v0.2.0] - *Próxima Entrega*
-- **📊 Panel de Métricas (Dashboard) Avanzado:**
-  - Integración visual con analíticas de la API de Mercado Libre (gráficos de rendimiento, ventas del período, conversión y alertas).
-- **🧮 Refactor Integral de Calculadora:**
-  - Controles interactivos y personalizados para simulación de impuestos, bonificaciones por reputación y costos de envío configurables en tiempo real.
-- **⚙️ Rediseño de Módulo a 'Configuración':**
-  - Transformación del tab *'Reglas y Excepciones'* en un panel integral de *'Configuración'* con pestañas para reglas de precios, exclusiones, discrecionales y ajustes de cuenta.
+- **📊 Rediseño y Potenciación del Tab 'Dashboard':**
+  - Gráficos interactivos de analíticas y tendencias de ventas del período consumidos desde la API.
+  - Tarjetas de estado de reputación del vendedor, volumen de visitas y alertas operativas de publicaciones críticas.
+- **🧮 Rediseño del Simulador / Calculadora de Precios:**
+  - Nueva interfaz con sliders e inputs personalizables para simular alícuotas impositivas (IIBB, IVA), nivel de reputación y tipos de envío.
+  - Comparador visual interactivo entre escenarios de ganancia neta.
+- **⚙️ Transformación del Módulo a 'Configuración':**
+  - Reemplazo de la pestaña *'Reglas y Excepciones'* por una vista integral de *'Configuración'* organizada en pestañas secundarias (Reglas de precios, Exclusiones de palabras clave, Parámetros fiscales y Perfil de vendedor).
 
 ---
 
-### [v0.3.0] - *Autenticación y Control de Acceso*
-- **👥 Pantalla de Login y Gestión de Roles:**
-  - Login interactivo con usuario y contraseña (offline).
-  - Vistas y permisos adaptados según el rol del usuario (Administrador, Operador, Auditor).
-- **🔑 Recuperación de Contraseña Offline:**
-  - Flujo de recuperación seguro mediante preguntas secretas o clave maestra local sin depender de servidores de correo.
+### [v0.3.0] - *Autenticación, Vistas por Rol y Seguridad*
+- **👥 Pantalla de Inicio de Sesión (Login View):**
+  - Vista moderna de login con usuario y contraseña (validación offline).
+  - Adaptación dinámica de la interfaz y permisos según el rol activo (Ocultar/bloquear acciones según sea *Administrador*, *Operador* o *Auditor*).
+- **🔑 Interfaz de Recuperación de Contraseña Offline:**
+  - Modal guiado para restablecer la contraseña mediante preguntas de seguridad predefinidas o ingreso de código de rescate master.
 
 ---
 
-### [v0.4.0] - *Soporte Multicanal (Mercado Libre + Tiendanube)*
-- **🌐 Selector de Plataforma en Login:**
-  - Conmutador para elegir el canal de trabajo activo: **Mercado Libre** o **Tiendanube**.
-- **🛍️ Gestión para Tiendanube:**
-  - Interfaces para sincronización de catálogo, actualización de stock en tiempo real y administración de precios y promociones.
+### [v0.4.0] - *Experiencia Multicanal (Mercado Libre + Tiendanube)*
+- **🌐 Conmutador de Plataforma Activa:**
+  - Selector visual en el login o en el header para alternar entre el espacio de trabajo de **Mercado Libre** o **Tiendanube**.
+- **🛍️ Vistas y Componentes para Tiendanube:**
+  - Tablas dedicadas para gestionar el catálogo de Tiendanube (precios, control de stock, variantes y promociones activas).
+  - Módulo de sincronización masiva adaptado a las columnas y particularidades de Tiendanube.
 
 ---
 
