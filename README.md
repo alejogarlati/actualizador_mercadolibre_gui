@@ -4,6 +4,12 @@ Interfaz gráfica de escritorio moderna desarrollada con **Electron**, **React 1
 
 ---
 
+## 📚 Documentación y Registro de Versiones
+- **[📝 Registro de Cambios (Changelog)](CHANGELOG.md):** Historial de versiones y nuevas características de la GUI.
+- **[📖 Manual de Usuario General](../MANUAL_DE_USUARIO.md):** Guía operativa paso a paso de toda la plataforma.
+
+---
+
 ## 🎨 Características de la Interfaz Visual
 
 - **Diseño Moderno:** Tema off-white profesional con acento en rojo corporativo (`#dc2626`).
