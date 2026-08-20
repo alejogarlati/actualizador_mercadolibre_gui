@@ -76,15 +76,42 @@ export const updateSingleItem = async (itemId, data) => {
 
 export const fetchRules = async () => {
   try {
-    const res = await axios.get(`${API_BASE_URL}/config/rules`);
+    const res = await axios.get(`${API_BASE_URL}/config/settings`);
     return res.data;
   } catch (err) {
-    return { general_discount_pct: 30.0, excluded_categories: [], excluded_keywords: ['mueble', 'aluminio'] };
+    return { 
+      general_discount_pct: 30.0, 
+      shipping_discount_pct: 50.0,
+      default_tax_rate_pct: 0.65,
+      default_listing_type: 'gold_special',
+      tolerance_pct: 5.0,
+      excluded_categories: [], 
+      excluded_keywords: ['mueble', 'aluminio'],
+      pack_multipliers: {},
+      custom_multipliers: {}
+    };
   }
 };
 
-export const saveRules = async (rules) => {
-  const res = await axios.post(`${API_BASE_URL}/config/rules`, rules);
+export const saveRules = async (settings) => {
+  const res = await axios.post(`${API_BASE_URL}/config/settings`, settings);
+  return res.data;
+};
+
+export const fetchAppSettings = fetchRules;
+export const saveAppSettings = saveRules;
+
+export const fetchAnalyticsSummary = async () => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/analytics/summary`);
+    return res.data;
+  } catch (err) {
+    return null;
+  }
+};
+
+export const simulateAdvancedPrice = async (data) => {
+  const res = await axios.post(`${API_BASE_URL}/calculator/simulate`, data);
   return res.data;
 };
 

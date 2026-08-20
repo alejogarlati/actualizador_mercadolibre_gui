@@ -33,19 +33,28 @@ import {
   Clock,
   Eye,
   DollarSign,
-  Truck
+  Truck,
+  Percent,
+  Sliders,
+  Award,
+  Layers,
+  Sparkles,
+  SlidersHorizontal,
+  Tag
 } from 'lucide-react';
 import { 
   checkHealth, 
   fetchStats, 
-  calculatePrice, 
+  calculatePrice,
+  simulateAdvancedPrice,
+  fetchAnalyticsSummary,
   uploadCSV, 
   executeSync, 
   fetchSyncStatus,
   fetchItems, 
   updateSingleItem,
-  fetchRules,
-  saveRules,
+  fetchAppSettings,
+  saveAppSettings,
   fetchAuditReport,
   fetchLogs
 } from './services/api';
@@ -141,12 +150,16 @@ export default function App() {
     }
   };
 
-  // Formulario Calculadora
+  // Formulario Calculadora Avanzada v0.2.0
   const [calcForm, setCalcForm] = useState({
     precio_mostrador: 10000,
     category_id: 'MLA3530',
     listing_type_id: 'gold_special',
-    margen_adicional_pct: 0
+    margen_pct: 0.0,
+    tax_rate_pct: 0.65,
+    shipping_cost_override: '',
+    reputation_discount_pct: 50.0,
+    has_free_shipping: true
   });
   const [calcResult, setCalcResult] = useState(null);
   const [calcLoading, setCalcLoading] = useState(false);
@@ -156,9 +169,24 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState('');
   const [syncProgress, setSyncProgress] = useState({ is_running: false, total: 0, current: 0, success_count: 0, fail_count: 0, logs: [] });
 
-  // Reglas de Excepción por Categoría
-  const [rulesForm, setRulesForm] = useState({ general_discount_pct: 30.0, excluded_categories: [], excluded_keywords: ['mueble', 'aluminio'] });
-  const [rulesSaving, setRulesSaving] = useState(false);
+  // Configuración General del Sistema v0.2.0
+  const [settingsForm, setSettingsForm] = useState({
+    general_discount_pct: 30.0,
+    shipping_discount_pct: 50.0,
+    default_tax_rate_pct: 0.65,
+    default_listing_type: 'gold_special',
+    tolerance_pct: 5.0,
+    excluded_categories: ['MLA30088', 'MLA7141', 'MLA30069', 'MLA30038', 'MLA436380', 'MLA454690', 'MLA454704', 'MLA436382'],
+    excluded_keywords: ['mueble', 'aluminio'],
+    pack_multipliers: {},
+    custom_multipliers: {}
+  });
+  const [settingsActiveSubTab, setSettingsActiveSubTab] = useState('general');
+  const [settingsSaving, setSettingsSaving] = useState(false);
+
+  // Analíticas Avanzadas de Mercado Libre
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   // Módulo de Auditoría de Neto a Recibir
   const [auditReport, setAuditReport] = useState(null);
@@ -200,12 +228,15 @@ export default function App() {
 
   useEffect(() => {
     loadHealthAndStats();
-    loadRules();
+    loadAppSettingsData();
+    loadAnalytics();
   }, []);
 
   useEffect(() => {
     if (activeTab === 'items') {
       loadItems();
+    } else if (activeTab === 'dashboard') {
+      loadAnalytics();
     }
   }, [activeTab]);
 
@@ -223,21 +254,31 @@ export default function App() {
     setHealthRefreshing(false);
   };
 
-  const loadRules = async () => {
-    const data = await fetchRules();
-    if (data) setRulesForm(data);
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    const an = await fetchAnalyticsSummary();
+    if (an) setAnalyticsData(an);
+    setAnalyticsLoading(false);
   };
 
-  const handleSaveRules = async (e) => {
-    e.preventDefault();
-    setRulesSaving(true);
+  const loadAppSettingsData = async () => {
+    const data = await fetchAppSettings();
+    if (data) {
+      setSettingsForm(prev => ({ ...prev, ...data }));
+      if (data.tolerance_pct) setTolerancePct(data.tolerance_pct);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    if (e) e.preventDefault();
+    setSettingsSaving(true);
     try {
-      await saveRules(rulesForm);
-      addToast('success', 'Reglas Guardadas', 'Reglas por categoría y excepciones actualizadas.');
+      await saveAppSettings(settingsForm);
+      addToast('success', 'Configuración Guardada', 'Preferencias del sistema y reglas actualizadas.');
     } catch (err) {
-      addToast('error', 'Error', `No se pudieron guardar las reglas: ${err.message}`);
+      addToast('error', 'Error', `No se pudo guardar la configuración: ${err.message}`);
     } finally {
-      setRulesSaving(false);
+      setSettingsSaving(false);
     }
   };
 
@@ -268,13 +309,19 @@ export default function App() {
     e.preventDefault();
     setCalcLoading(true);
     try {
-      const res = await calculatePrice({
-        ...calcForm,
+      const payload = {
         precio_mostrador: parseFloat(calcForm.precio_mostrador),
-        margen_adicional_pct: parseFloat(calcForm.margen_adicional_pct)
-      });
+        category_id: calcForm.category_id || 'MLA3530',
+        listing_type_id: calcForm.listing_type_id || 'gold_special',
+        margen_pct: parseFloat(calcForm.margen_pct) || 0.0,
+        tax_rate_pct: parseFloat(calcForm.tax_rate_pct) || 0.65,
+        reputation_discount_pct: parseFloat(calcForm.reputation_discount_pct) || 50.0,
+        has_free_shipping: Boolean(calcForm.has_free_shipping),
+        shipping_cost_override: calcForm.shipping_cost_override ? parseFloat(calcForm.shipping_cost_override) : null
+      };
+      const res = await simulateAdvancedPrice(payload);
       setCalcResult(res);
-      addToast('info', 'Cálculo Completado', `Precio final sugerido: $${res.precio_final_meli}`);
+      addToast('info', 'Simulación Completada', `Precio publicado sugerido: $${res.precio_publicado_sugerido?.toLocaleString()}`);
     } catch (err) {
       addToast('error', 'Error de Cálculo', err.message);
     } finally {
@@ -592,7 +639,7 @@ export default function App() {
               }`}
               onClick={() => setActiveTab('calculator')}
             >
-              <Calculator className="w-4 h-4" /> Calculadora MeLi
+              <Calculator className="w-4 h-4" /> Calculadora & Simulador
             </button>
 
             <button 
@@ -601,22 +648,25 @@ export default function App() {
               }`}
               onClick={() => setActiveTab('rules')}
             >
-              <SettingsIcon className="w-4 h-4" /> Reglas y Excepciones
+              <SettingsIcon className="w-4 h-4" /> Configuración
             </button>
           </nav>
         </div>
 
         {/* WIDGET MINI CLI LOGS */}
         <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-inner flex flex-col">
-          <div 
-            className="bg-slate-950 px-3 py-2 flex items-center justify-between cursor-pointer border-b border-slate-800 select-none"
-            onClick={() => setCliExpanded(!cliExpanded)}
-          >
-            <div className="flex items-center gap-2">
-              <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Console Log</span>
+          <div className="flex items-center justify-between px-3 py-2 bg-slate-950/80 border-b border-slate-800 text-[11px] font-bold text-slate-400">
+            <div className="flex items-center gap-1.5 text-slate-300">
+              <Terminal className="w-3.5 h-3.5 text-red-500" />
+              <span>Backend Logs</span>
             </div>
-            <span className="text-[10px] text-slate-500">{cliExpanded ? '▼' : '▲'}</span>
+            <button 
+              onClick={() => setCliExpanded(!cliExpanded)}
+              className="text-slate-500 hover:text-slate-300 p-0.5"
+              title={cliExpanded ? "Minimizar" : "Expandir"}
+            >
+              {cliExpanded ? "_" : "□"}
+            </button>
           </div>
 
           {cliExpanded && (
@@ -645,14 +695,14 @@ export default function App() {
         <header className="flex items-center justify-between pb-2 border-b border-slate-200">
           <div>
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-              {activeTab === 'dashboard' && 'Panel de Control General'}
+              {activeTab === 'dashboard' && 'Panel de Control & Analíticas'}
               {activeTab === 'items' && 'Inventario de Publicaciones'}
               {activeTab === 'sync' && 'Sincronizador Masivo desde ERP'}
               {activeTab === 'audit' && 'Auditoría de Neto a Recibir'}
-              {activeTab === 'calculator' && 'Simulador de Comisiones'}
-              {activeTab === 'rules' && 'Excepciones por Categoría'}
+              {activeTab === 'calculator' && 'Calculadora & Simulador Estratégico'}
+              {activeTab === 'rules' && 'Configuración del Sistema'}
             </h2>
-            <p className="text-xs text-slate-500 mt-1">Gestión automatizada de precios e inventario para Mercado Libre</p>
+            <p className="text-xs text-slate-500 mt-1">Gestión automatizada de precios, márgenes y analíticas para Mercado Libre</p>
           </div>
 
           {/* BADGE DE CONEXIÓN */}
@@ -697,51 +747,155 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 1: DASHBOARD */}
+        {/* TAB 1: DASHBOARD & ANALÍTICAS ME LI */}
         {activeTab === 'dashboard' && (
           <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* KPI CARDS SUPERIORES */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between gap-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Estado API Backend</span>
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Estado Backend</span>
                   <div className={`w-2.5 h-2.5 rounded-full ${health.status === 'online' ? 'bg-emerald-500' : 'bg-red-500'}`} />
                 </div>
-                <span className={`text-2xl font-black ${health.status === 'online' ? 'text-emerald-600' : 'text-red-600'}`}>
+                <span className={`text-xl font-black ${health.status === 'online' ? 'text-emerald-600' : 'text-red-600'}`}>
                   {health.status.toUpperCase()}
                 </span>
-                <p className="text-xs text-slate-500">Servidor REST en localhost:8000</p>
+                <p className="text-xs text-slate-500 truncate">Cuenta: {health.nickname || 'Sin Autenticar'}</p>
               </div>
 
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between gap-3">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Cuenta Mercado Libre</span>
-                <span className="text-2xl font-black text-slate-900">{health.nickname || 'Sin Autenticar'}</span>
-                <p className="text-xs text-slate-500">Seller ID: {health.user_id || 'N/A'}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Reputación MeLi</span>
+                  <Award className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl font-black text-emerald-600 uppercase">
+                    {analyticsData?.reputation_level ? analyticsData.reputation_level.replace('_', ' ') : (stats?.reputacion_nivel || 'Verde')}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  {analyticsData?.power_seller_status ? `MercadoLíder ${analyticsData.power_seller_status}` : 'Vendedor Confiable'}
+                </p>
               </div>
 
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between gap-3">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Publicaciones Activas</span>
-                <span className="text-2xl font-black text-slate-900">{stats ? stats.publicaciones_activas : '---'}</span>
-                <p className="text-xs text-slate-500">Total en catálogo: {stats ? stats.total_publicaciones : '---'}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Publicaciones Activas</span>
+                  <PackageSearch className="w-4 h-4 text-blue-600" />
+                </div>
+                <span className="text-xl font-black text-slate-900">
+                  {analyticsData?.total_active_listings ?? stats?.publicaciones_activas ?? '---'}
+                </span>
+                <p className="text-xs text-slate-500">
+                  Pausadas: {analyticsData?.total_paused_listings ?? stats?.publicaciones_pausadas ?? 0}
+                </p>
+              </div>
+
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Valuación Catálogo</span>
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                </div>
+                <span className="text-xl font-black text-slate-900">
+                  ${(analyticsData?.total_inventory_valuation ?? stats?.valor_total_inventario ?? 0).toLocaleString('es-AR')}
+                </span>
+                <p className="text-xs text-slate-500">
+                  Promedio: ${(analyticsData?.average_price ?? stats?.precio_promedio ?? 0).toLocaleString('es-AR')}
+                </p>
               </div>
             </div>
 
-            {stats && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-red-600" /> Resumen de Precios en Lista
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                    <span className="text-xs font-medium text-slate-500">Precio Promedio de Venta</span>
-                    <div className="text-xl font-bold text-slate-900 mt-1">${stats.precio_promedio?.toLocaleString()}</div>
+            {/* SECCIÓN ANALÍTICAS DE VENTAS Y TRANSACCIONES */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="md:col-span-2 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-red-600" />
+                    <h3 className="font-bold text-slate-900 text-sm">Métricas de Rendimiento y Reputación</h3>
                   </div>
-                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                    <span className="text-xs font-medium text-slate-500">Total ítems en Inventario</span>
-                    <div className="text-xl font-bold text-slate-900 mt-1">{stats.total_publicaciones} productos</div>
+                  <span className="text-xs text-slate-400 font-medium">Período 365 días</span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                    <span className="text-[11px] font-semibold text-slate-500 block">Ventas Completadas</span>
+                    <span className="text-2xl font-black text-slate-900 mt-1 block">
+                      {analyticsData?.sales_completed ?? 0}
+                    </span>
+                    <span className="text-[10px] text-slate-400">Transacciones exitosas</span>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                    <span className="text-[11px] font-semibold text-slate-500 block">Tasa de Reclamos</span>
+                    <span className={`text-2xl font-black mt-1 block ${
+                      (analyticsData?.claims_rate ?? 0) <= 2.0 ? 'text-emerald-600' : 'text-red-600'
+                    }`}>
+                      {analyticsData?.claims_rate ?? 0.0}%
+                    </span>
+                    <span className="text-[10px] text-slate-400">Objetivo: &lt; 2.0%</span>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                    <span className="text-[11px] font-semibold text-slate-500 block">Envíos con Demora</span>
+                    <span className={`text-2xl font-black mt-1 block ${
+                      (analyticsData?.delayed_handling_rate ?? 0) <= 15.0 ? 'text-emerald-600' : 'text-amber-600'
+                    }`}>
+                      {analyticsData?.delayed_handling_rate ?? 0.0}%
+                    </span>
+                    <span className="text-[10px] text-slate-400">Despacho a tiempo</span>
                   </div>
                 </div>
+
+                <div className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <Truck className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <span className="font-bold text-xs text-emerald-950 block">Cobertura de Envío Gratis Me2</span>
+                      <span className="text-[11px] text-emerald-800">Publicaciones con Mercado Envíos bonificado</span>
+                    </div>
+                  </div>
+                  <span className="text-xl font-black text-emerald-700">
+                    {analyticsData?.free_shipping_pct ?? stats?.porcentaje_envio_gratis ?? 0}%
+                  </span>
+                </div>
               </div>
-            )}
+
+              {/* PANEL DE ALERTAS Y ACCIONES */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <span>Alertas Operativas</span>
+                  </div>
+                  <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold">
+                    {analyticsData?.alerts_count ?? 0}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-3 overflow-y-auto max-h-64">
+                  {(!analyticsData?.alerts || analyticsData.alerts.length === 0) ? (
+                    <div className="p-4 text-center text-slate-400 text-xs flex flex-col items-center gap-2">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                      <span>Todo en orden. No hay alertas críticas en la cuenta.</span>
+                    </div>
+                  ) : (
+                    analyticsData.alerts.map((al, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`p-3.5 rounded-xl border text-xs flex flex-col gap-1 ${
+                          al.type === 'danger' ? 'bg-red-50 border-red-200 text-red-900' :
+                          al.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-900' :
+                          'bg-blue-50 border-blue-200 text-blue-900'
+                        }`}
+                      >
+                        <span className="font-bold">{al.title}</span>
+                        <p className="text-[11px] opacity-90">{al.message}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1290,99 +1444,339 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 5: CALCULADORA */}
+        {/* TAB 5: CALCULADORA & SIMULADOR ESTRATÉGICO v0.2.0 */}
         {activeTab === 'calculator' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <form onSubmit={handleCalculate} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
-              <h3 className="text-base font-bold text-slate-900">Simulador de Precio Mercado Libre</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <form onSubmit={handleCalculate} className="lg:col-span-6 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <Calculator className="w-5 h-5 text-red-600" />
+                  <h3 className="font-bold text-slate-900 text-base">Parámetros de Simulación</h3>
+                </div>
+                <span className="text-xs text-slate-400 font-medium">Algoritmo Financiero v0.2.0</span>
+              </div>
               
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-700">Precio Mostrador ERP ($)</label>
-                <input 
-                  type="number" 
-                  value={calcForm.precio_mostrador} 
-                  onChange={(e) => setCalcForm({...calcForm, precio_mostrador: e.target.value})}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-red-600"
-                  required 
-                />
+              {/* PRECIO BASE Y MARGEN */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-slate-700">Precio Mostrador ERP ($)</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    value={calcForm.precio_mostrador} 
+                    onChange={(e) => setCalcForm({...calcForm, precio_mostrador: e.target.value})}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 font-bold outline-none focus:border-red-600"
+                    required 
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-slate-700">Margen Neto Deseado (%)</label>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    value={calcForm.margen_pct} 
+                    onChange={(e) => setCalcForm({...calcForm, margen_pct: e.target.value})}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 font-bold outline-none focus:border-red-600"
+                    placeholder="0.0%"
+                  />
+                </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-700">Tipo de Publicación</label>
-                <select 
-                  value={calcForm.listing_type_id} 
-                  onChange={(e) => setCalcForm({...calcForm, listing_type_id: e.target.value})}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none"
-                >
-                  <option value="gold_special">Clásica (gold_special)</option>
-                  <option value="gold_pro">Premium (gold_pro)</option>
-                </select>
+              {/* TIPO DE PUBLICACION Y CATEGORIA */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-slate-700">Tipo de Publicación</label>
+                  <select 
+                    value={calcForm.listing_type_id} 
+                    onChange={(e) => setCalcForm({...calcForm, listing_type_id: e.target.value})}
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-900 outline-none"
+                  >
+                    <option value="gold_special">Clásica (gold_special)</option>
+                    <option value="gold_pro">Premium (gold_pro)</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-slate-700">Categoría MeLi (ID)</label>
+                  <input 
+                    type="text" 
+                    value={calcForm.category_id} 
+                    onChange={(e) => setCalcForm({...calcForm, category_id: e.target.value})}
+                    placeholder="Ej: MLA3530"
+                    className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-900 outline-none focus:border-red-600"
+                  />
+                </div>
+              </div>
+
+              {/* ENVÍOS Y REPUTACIÓN */}
+              <div className="p-4 bg-slate-50/80 border border-slate-200/60 rounded-2xl flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-800">
+                    <input 
+                      type="checkbox"
+                      checked={calcForm.has_free_shipping}
+                      onChange={(e) => setCalcForm({...calcForm, has_free_shipping: e.target.checked})}
+                      className="w-4 h-4 text-red-600 rounded"
+                    />
+                    <span>Incluye Envío Gratis (Mercado Envíos)</span>
+                  </label>
+                </div>
+
+                {calcForm.has_free_shipping && (
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-semibold text-slate-600">Bonificación por Reputación (%)</label>
+                      <input 
+                        type="number"
+                        step="5"
+                        value={calcForm.reputation_discount_pct}
+                        onChange={(e) => setCalcForm({...calcForm, reputation_discount_pct: e.target.value})}
+                        className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-900 outline-none"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-semibold text-slate-600">Tarifa Envío Manual ($) <span className="text-slate-400 font-normal">(Opcional)</span></label>
+                      <input 
+                        type="number"
+                        step="50"
+                        value={calcForm.shipping_cost_override}
+                        onChange={(e) => setCalcForm({...calcForm, shipping_cost_override: e.target.value})}
+                        placeholder="Auto (Según peso)"
+                        className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* IMPUESTOS Y RETENCIONES */}
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                  <span>Alícuota Impositiva Estimada / IIBB (%)</span>
+                  <span className="text-[11px] text-slate-400 font-normal">Por defecto: 0.65%</span>
+                </label>
+                <input 
+                  type="number" 
+                  step="0.05"
+                  value={calcForm.tax_rate_pct} 
+                  onChange={(e) => setCalcForm({...calcForm, tax_rate_pct: e.target.value})}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 outline-none focus:border-red-600"
+                />
               </div>
 
               <button 
                 type="submit" 
                 disabled={calcLoading}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-colors shadow-sm mt-2 disabled:opacity-50"
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl text-sm transition-colors shadow-sm mt-1 disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {calcLoading ? 'Calculando...' : 'Calcular Precio Sugerido'}
+                <Sparkles className="w-4 h-4" />
+                {calcLoading ? 'Simulando escenario...' : 'Calcular Precio Óptimo'}
               </button>
             </form>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            {/* PANEL DE RESULTADOS DE SIMULACIÓN */}
+            <div className="lg:col-span-6 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-900 mb-4">Desglose Calculado</h3>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                  <h3 className="text-base font-bold text-slate-900">Radiografía Financiera Sugerida</h3>
+                  {calcResult && (
+                    <span className="text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full">
+                      Rentabilidad: +${calcResult.rentabilidad_monetaria?.toLocaleString()} ({calcResult.margen_neto_real_pct}%)
+                    </span>
+                  )}
+                </div>
+
                 {calcResult ? (
-                  <div className="flex flex-col gap-3 text-sm">
-                    <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">Comisión %:</span>
-                      <span className="font-semibold">{calcResult.comision_porcentaje}%</span>
+                  <div className="flex flex-col gap-3 text-xs">
+                    <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
+                      <div>
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Precio Final Sugerido ML</span>
+                        <span className="text-2xl font-black text-slate-900">${calcResult.precio_publicado_sugerido?.toLocaleString()}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">Neto Real en Mano</span>
+                        <span className="text-2xl font-black text-emerald-600">${calcResult.neto_real_obtenido?.toLocaleString()}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">Cargo Fijo:</span>
-                      <span className="font-semibold">${calcResult.cargo_fijo}</span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-500">Costo Envío Gratis:</span>
-                      <span className="font-semibold">${calcResult.costo_envio}</span>
+
+                    <div className="border border-slate-100 rounded-2xl divide-y divide-slate-100 mt-2">
+                      <div className="p-3 flex justify-between items-center">
+                        <span className="text-slate-600">Costo Base / Mostrador ERP:</span>
+                        <span className="font-bold text-slate-900">${calcResult.costo_efectivo?.toLocaleString()}</span>
+                      </div>
+                      <div className="p-3 flex justify-between items-center">
+                        <span className="text-slate-600">Comisión Mercado Libre ({calcResult.comision_porcentaje}% + fija):</span>
+                        <span className="font-bold text-red-600">-${calcResult.comision_total_monto?.toLocaleString()}</span>
+                      </div>
+                      <div className="p-3 flex justify-between items-center">
+                        <span className="text-slate-600">Costo Envío Vendedor (Bonif. {calcResult.bonificacion_envio_pct}%):</span>
+                        <span className="font-bold text-red-600">-${calcResult.costo_envio_final?.toLocaleString()}</span>
+                      </div>
+                      <div className="p-3 flex justify-between items-center">
+                        <span className="text-slate-600">Impuestos / Percepciones ({calcResult.alicuota_impuestos_pct}%):</span>
+                        <span className="font-bold text-red-600">-${calcResult.impuestos_monto?.toLocaleString()}</span>
+                      </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-xs text-slate-400">Ingresa el precio y presiona calcular.</div>
+                  <div className="p-12 text-center text-slate-400 text-xs flex flex-col items-center gap-3">
+                    <Calculator className="w-10 h-10 text-slate-300" />
+                    <span>Configura las variables y presiona "Calcular Precio Óptimo" para ver el desglose exacto.</span>
+                  </div>
                 )}
               </div>
 
               {calcResult && (
-                <div className="pt-4 border-t border-slate-100 mt-4">
-                  <span className="text-xs text-slate-500 font-medium">Precio Final Sugerido</span>
-                  <div className="text-2xl font-black text-emerald-600 mt-0.5">${calcResult.precio_final_meli}</div>
+                <div className="p-3.5 bg-emerald-50/70 border border-emerald-100 rounded-2xl text-[11px] text-emerald-950 flex items-center gap-2 mt-4">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>El precio publicado absorbe comisiones, impuestos y envíos garantizando el recupero del costo ERP.</span>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* TAB 6: REGLAS */}
+        {/* TAB 6: CONFIGURACIÓN INTEGRAL v0.2.0 */}
         {activeTab === 'rules' && (
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm max-w-xl flex flex-col gap-4">
-            <h3 className="text-base font-bold text-slate-900">Excepciones por Categoría</h3>
-            <form onSubmit={handleSaveRules} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-slate-700">Palabras Clave Excluidas (separadas por coma)</label>
-                <input 
-                  type="text" 
-                  value={rulesForm.excluded_keywords?.join(', ')} 
-                  onChange={(e) => setRulesForm({...rulesForm, excluded_keywords: e.target.value.split(',').map(s => s.trim())})}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none"
-                />
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={rulesSaving}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition-colors shadow-sm disabled:opacity-50"
+          <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col">
+            {/* SUB-TABS HEADER */}
+            <div className="flex border-b border-slate-200 bg-slate-50/60 p-2 gap-2">
+              <button
+                onClick={() => setSettingsActiveSubTab('general')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  settingsActiveSubTab === 'general' ? 'bg-white text-red-600 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                {rulesSaving ? 'Guardando...' : 'Guardar Reglas'}
+                Parámetros Generales
               </button>
+              <button
+                onClick={() => setSettingsActiveSubTab('exclusions')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  settingsActiveSubTab === 'exclusions' ? 'bg-white text-red-600 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Exclusiones (Keywords & Categorías)
+              </button>
+              <button
+                onClick={() => setSettingsActiveSubTab('packs')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  settingsActiveSubTab === 'packs' ? 'bg-white text-red-600 shadow-sm border border-slate-200' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Multiplicadores de Pack
+              </button>
+            </div>
+
+            {/* FORMULARIO DE CONFIGURACIÓN */}
+            <form onSubmit={handleSaveSettings} className="p-6 flex flex-col gap-6 max-w-2xl">
+              {settingsActiveSubTab === 'general' && (
+                <div className="flex flex-col gap-4 animate-in fade-in duration-150">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-700">Descuento General ERP Mostrador (%)</label>
+                      <input 
+                        type="number" 
+                        step="0.5"
+                        value={settingsForm.general_discount_pct} 
+                        onChange={(e) => setSettingsForm({...settingsForm, general_discount_pct: parseFloat(e.target.value) || 0})}
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-red-600"
+                        required 
+                      />
+                      <span className="text-[10px] text-slate-400">Descuento aplicado habitualmente en el ERP (30%).</span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-700">Bonificación Reputación Envíos ME2 (%)</label>
+                      <input 
+                        type="number" 
+                        step="5"
+                        value={settingsForm.shipping_discount_pct} 
+                        onChange={(e) => setSettingsForm({...settingsForm, shipping_discount_pct: parseFloat(e.target.value) || 0})}
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-red-600"
+                        required 
+                      />
+                      <span className="text-[10px] text-slate-400">Descuento en fletes asumido por Mercado Libre (50%).</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-700">Alícuota Impositiva Base / IIBB (%)</label>
+                      <input 
+                        type="number" 
+                        step="0.05"
+                        value={settingsForm.default_tax_rate_pct} 
+                        onChange={(e) => setSettingsForm({...settingsForm, default_tax_rate_pct: parseFloat(e.target.value) || 0})}
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-red-600"
+                        required 
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-bold text-slate-700">Tolerancia de Auditoría por Defecto (%)</label>
+                      <input 
+                        type="number" 
+                        step="1"
+                        value={settingsForm.tolerance_pct} 
+                        onChange={(e) => setSettingsForm({...settingsForm, tolerance_pct: parseFloat(e.target.value) || 0})}
+                        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-red-600"
+                        required 
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {settingsActiveSubTab === 'exclusions' && (
+                <div className="flex flex-col gap-4 animate-in fade-in duration-150">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-700">Palabras Clave Excluidas (Separadas por coma)</label>
+                    <input 
+                      type="text" 
+                      value={settingsForm.excluded_keywords?.join(', ')} 
+                      onChange={(e) => setSettingsForm({...settingsForm, excluded_keywords: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})}
+                      className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 outline-none focus:border-red-600 font-mono text-xs"
+                      placeholder="mueble, aluminio, chapa"
+                    />
+                    <span className="text-[10px] text-slate-400">Los productos que contengan estas palabras revertirán el descuento de mostrador (precio / 0.70).</span>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-slate-700">IDs de Categorías Excluidas (Separadas por coma)</label>
+                    <textarea 
+                      rows="3"
+                      value={settingsForm.excluded_categories?.join(', ')} 
+                      onChange={(e) => setSettingsForm({...settingsForm, excluded_categories: e.target.value.split(',').map(s => s.trim()).filter(Boolean)})}
+                      className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 font-mono outline-none focus:border-red-600"
+                      placeholder="MLA30088, MLA7141, MLA30069"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {settingsActiveSubTab === 'packs' && (
+                <div className="flex flex-col gap-3 animate-in fade-in duration-150">
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Define multiplicadores fijos de unidades por pack para SKUs o IDs específicos donde una publicación contenga combos de productos.
+                  </p>
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-400 font-mono">
+                    {JSON.stringify(settingsForm.pack_multipliers || {}, null, 2)}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <button 
+                  type="submit" 
+                  disabled={settingsSaving}
+                  className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition-colors shadow-sm disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {settingsSaving ? 'Guardando preferencias...' : 'Guardar Configuración'}
+                </button>
+              </div>
             </form>
           </div>
         )}

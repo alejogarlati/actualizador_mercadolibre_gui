@@ -1,4 +1,4 @@
-﻿# 📝 Changelog - Frontend GUI (Desktop Electron)
+# 📝 Changelog - Frontend GUI (Desktop Electron)
 
 Todos los cambios notables en la interfaz gráfica, componentes visuales y experiencia de usuario serán documentados en este archivo.
 
@@ -8,18 +8,6 @@ y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ---
 
 ## 🗺️ Roadmap de Próximas Versiones (Frontend)
-
-### [v0.2.0] - *Próxima Entrega*
-- **📊 Rediseño y Potenciación del Tab 'Dashboard':**
-  - Gráficos interactivos de analíticas y tendencias de ventas del período consumidos desde la API.
-  - Tarjetas de estado de reputación del vendedor, volumen de visitas y alertas operativas de publicaciones críticas.
-- **🧮 Rediseño del Simulador / Calculadora de Precios:**
-  - Nueva interfaz con sliders e inputs personalizables para simular alícuotas impositivas (IIBB, IVA), nivel de reputación y tipos de envío.
-  - Comparador visual interactivo entre escenarios de ganancia neta.
-- **⚙️ Transformación del Módulo a 'Configuración':**
-  - Reemplazo de la pestaña *'Reglas y Excepciones'* por una vista integral de *'Configuración'* organizada en pestañas secundarias (Reglas de precios, Exclusiones de palabras clave, Parámetros fiscales y Perfil de vendedor).
-
----
 
 ### [v0.3.0] - *Autenticación, Vistas por Rol y Seguridad*
 - **👥 Pantalla de Inicio de Sesión (Login View):**
@@ -36,6 +24,21 @@ y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - **🛍️ Vistas y Componentes para Tiendanube:**
   - Tablas dedicadas para gestionar el catálogo de Tiendanube (precios, control de stock, variantes y promociones activas).
   - Módulo de sincronización masiva adaptado a las columnas y particularidades de Tiendanube.
+
+---
+
+## [v0.2.0] - 2026-08-20
+
+### 🚀 Novedades y Características Principales (Features)
+- **📊 Panel de Control & Analíticas de MeLi en Tiempo Real:**
+  - Integración de tarjetas KPI para Estado Backend, Nivel de Reputación, Valuación Total de Inventario y Cobertura de Envíos Me2.
+  - Indicadores clave de rendimiento: Ventas Completadas, Tasa de Reclamos (%) y Envíos con Demora (%).
+  - Módulo de Alertas Operativas en vivo (detección de publicaciones sin SKU, reclamos altos y publicaciones pausadas).
+- **🧮 Calculadora & Simulador Financiero Estratégico:**
+  - Simulador con parámetros personalizables: Precio mostrador, margen neto deseado, tipo de publicación, categoría, alícuota de impuestos/IIBB y fletes bonificados.
+  - Desglose instantáneo con rentabilidad monetaria, margen neto obtenido y radiografía financiera de comisiones y deducciones.
+- **⚙️ Módulo de Configuración Integral (Reemplazo de 'Reglas y Excepciones'):**
+  - Interfaz unificada con pestañas para: *Parámetros Generales* (descuentos ERP, bonificación Me2, impuestos, tolerancia), *Exclusiones* (palabras clave y categorías) y *Multiplicadores de Pack*.
 
 ---
 
