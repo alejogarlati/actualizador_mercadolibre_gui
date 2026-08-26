@@ -65,6 +65,7 @@ import {
   fetchTiendanubeVariants,
   saveTiendanubeVariantOverride,
   fetchTiendanubeCategoriesTree,
+  refreshTiendanubeCategories,
   saveTiendanubeCategoryDiscount,
   fetchTiendanubeAudit,
   fetchTiendanubeItemDetail,
@@ -349,6 +350,19 @@ export default function App() {
       setTnAuditReport(audit);
     } catch (err) {
       console.error('Error al re-auditar Tiendanube:', err);
+    }
+  };
+
+  const handleRefreshTiendanubeCategories = async () => {
+    setTnLoading(true);
+    try {
+      const res = await refreshTiendanubeCategories();
+      addToast('success', 'Categorías Sincronizadas', res.message || `${res.count || 0} categorías descargadas desde Tiendanube.`);
+      await loadTiendanubeData();
+    } catch (err) {
+      addToast('error', 'Error al sincronizar categorías', err.response?.data?.detail || err.message);
+    } finally {
+      setTnLoading(false);
     }
   };
 
@@ -1078,7 +1092,7 @@ export default function App() {
               <TiendaNubeCategoriesView
                 categoriesTree={tnCategoriesTree}
                 loading={tnLoading}
-                onRefresh={loadTiendanubeData}
+                onRefresh={handleRefreshTiendanubeCategories}
                 onSaveCategoryDiscount={handleSaveCategoryDiscount}
               />
             )}

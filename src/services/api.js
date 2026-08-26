@@ -237,6 +237,11 @@ export const fetchTiendanubeCategoriesTree = async () => {
   }
 };
 
+export const refreshTiendanubeCategories = async () => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/categories/refresh`);
+  return res.data;
+};
+
 export const saveTiendanubeCategoryDiscount = async (categoryId, discountPct) => {
   const res = await axios.post(`${API_BASE_URL}/tiendanube/categories/${categoryId}/discount`, {
     discount_pct: discountPct
