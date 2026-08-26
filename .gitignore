@@ -1,3 +1,9 @@
+# Secrets & Notes
+.env
+*.env
+*.txt
+correcciones.txt
+
 # Logs
 logs
 *.log
