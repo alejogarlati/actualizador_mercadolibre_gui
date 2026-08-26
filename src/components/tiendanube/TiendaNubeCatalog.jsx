@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, 
   Filter, 
@@ -8,6 +8,9 @@ import {
   Trash2, 
   ChevronDown, 
   ChevronRight, 
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronsRight,
   Tag, 
   ExternalLink, 
   Package, 
@@ -19,9 +22,9 @@ import {
 } from 'lucide-react';
 
 export default function TiendaNubeCatalog({ 
-  items, 
-  categories, 
-  loading, 
+  items = [], 
+  categories = [], 
+  loading = false, 
   onRefresh, 
   onOpenCreate, 
   onOpenEdit, 
@@ -32,6 +35,10 @@ export default function TiendaNubeCatalog({
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [expandedRows, setExpandedRows] = useState({});
+
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25); // 15, 25, 50, 100, 'all'
 
   // Quick edit state
   const [quickEditItem, setQuickEditItem] = useState(null);
@@ -60,29 +67,73 @@ export default function TiendaNubeCatalog({
     setQuickEditItem(null);
   };
 
-  // Filtrado
-  const filteredItems = (items || []).filter(item => {
-    const matchSearch = 
-      item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(item.id).includes(searchTerm);
+  // Filtrado de items
+  const filteredItems = useMemo(() => {
+    return (items || []).filter(item => {
+      const matchSearch = 
+        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        String(item.id).includes(searchTerm) ||
+        (item.variants && item.variants.some(v => v.sku?.toLowerCase().includes(searchTerm.toLowerCase())));
 
-    const matchStatus = 
-      statusFilter === 'all' || 
-      (statusFilter === 'active' && item.status === 'active') ||
-      (statusFilter === 'hidden' && item.status === 'hidden');
+      const matchStatus = 
+        statusFilter === 'all' || 
+        (statusFilter === 'active' && item.status === 'active') ||
+        (statusFilter === 'hidden' && item.status === 'hidden');
 
-    const matchCat = 
-      categoryFilter === 'all' || 
-      String(item.category_id) === String(categoryFilter);
+      const matchCat = 
+        categoryFilter === 'all' || 
+        String(item.category_id) === String(categoryFilter);
 
-    return matchSearch && matchStatus && matchCat;
-  });
+      return matchSearch && matchStatus && matchCat;
+    });
+  }, [items, searchTerm, statusFilter, categoryFilter]);
+
+  // Total de variantes de los items filtrados
+  const totalVariantsCount = useMemo(() => {
+    return filteredItems.reduce((acc, curr) => acc + (curr.variants?.length || 1), 0);
+  }, [filteredItems]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, categoryFilter, pageSize]);
+
+  // Cálculos de Paginación
+  const effectivePageSize = pageSize === 'all' ? filteredItems.length || 1 : pageSize;
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / effectivePageSize));
+  
+  const paginatedItems = useMemo(() => {
+    if (pageSize === 'all') return filteredItems;
+    const start = (currentPage - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, currentPage, pageSize]);
+
+  const startIdx = filteredItems.length === 0 ? 0 : (currentPage - 1) * effectivePageSize + 1;
+  const endIdx = pageSize === 'all' ? filteredItems.length : Math.min(currentPage * pageSize, filteredItems.length);
+
+  // Helper para generar números de página con ventana inteligente
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      let start = Math.max(1, currentPage - 2);
+      let end = Math.min(totalPages, currentPage + 2);
+
+      if (start === 1) end = Math.min(totalPages, maxVisible);
+      if (end === totalPages) start = Math.max(1, totalPages - maxVisible + 1);
+
+      for (let i = start; i <= end; i++) pages.push(i);
+    }
+    return pages;
+  };
 
   return (
     <div className="flex flex-col gap-5">
-      {/* Barra de Filtros y Acciones */}
+      {/* Barra de Filtros, Búsqueda y Acciones */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         <div className="flex-1 flex flex-wrap items-center gap-3">
           {/* Buscador */}
@@ -90,7 +141,7 @@ export default function TiendaNubeCatalog({
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Buscar por nombre, SKU, marca o ID..."
+              placeholder="Buscar por nombre, SKU padre/variante, marca o ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-50 text-slate-900 text-xs pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 focus:bg-white transition-colors"
@@ -116,7 +167,7 @@ export default function TiendaNubeCatalog({
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500"
+              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 max-w-[200px] truncate"
             >
               <option value="all">Todas las categorías</option>
               {categories.map(cat => (
@@ -126,6 +177,7 @@ export default function TiendaNubeCatalog({
           )}
         </div>
 
+        {/* Botones de Acción */}
         <div className="flex items-center gap-2.5">
           <button
             onClick={onRefresh}
@@ -147,15 +199,42 @@ export default function TiendaNubeCatalog({
         </div>
       </div>
 
+      {/* Indicador de Resumen de Catálogo */}
+      <div className="flex items-center justify-between text-xs text-slate-500 px-1">
+        <div className="flex items-center gap-2">
+          <span>Mostrando <strong className="text-slate-800">{startIdx} - {endIdx}</strong> de <strong className="text-slate-800">{filteredItems.length}</strong> productos</span>
+          <span className="text-slate-300">•</span>
+          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-mono text-[11px] font-semibold">
+            {totalVariantsCount} variantes / SKUs totales
+          </span>
+        </div>
+
+        {/* Selector de cantidad por página rápido */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-slate-400">Por página:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => setPageSize(e.target.value === 'all' ? 'all' : parseInt(e.target.value))}
+            className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 font-semibold focus:outline-none focus:border-red-500"
+          >
+            <option value={15}>15</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value="all">Todos ({filteredItems.length})</option>
+          </select>
+        </div>
+      </div>
+
       {/* Tabla de Catálogo */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4 w-10"></th>
+                <th className="py-3.5 px-4 w-10 text-center">#</th>
                 <th className="py-3.5 px-4">Producto & Marca</th>
-                <th className="py-3.5 px-4">SKU</th>
+                <th className="py-3.5 px-4">SKU Padre</th>
                 <th className="py-3.5 px-4 text-right">Precio Lista</th>
                 <th className="py-3.5 px-4 text-right">Oferta</th>
                 <th className="py-3.5 px-4 text-right">Costo ERP</th>
@@ -167,39 +246,41 @@ export default function TiendaNubeCatalog({
             <tbody className="divide-y divide-slate-100 text-slate-800">
               {loading && items.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="py-12 text-center text-slate-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-red-600" />
-                    <span>Cargando catálogo de Tiendanube...</span>
+                  <td colSpan="9" className="py-16 text-center text-slate-500">
+                    <RefreshCw className="w-7 h-7 animate-spin mx-auto mb-2 text-red-600" />
+                    <span className="font-semibold">Cargando catálogo completo de Tiendanube...</span>
                   </td>
                 </tr>
-              ) : filteredItems.length === 0 ? (
+              ) : paginatedItems.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="py-12 text-center text-slate-500">
-                    <Package className="w-8 h-8 mx-auto mb-2 text-slate-400" />
+                  <td colSpan="9" className="py-16 text-center text-slate-500">
+                    <Package className="w-10 h-10 mx-auto mb-2 text-slate-400" />
                     <p className="text-sm font-bold text-slate-700">No se encontraron productos</p>
                     <p className="text-xs text-slate-400 mt-1">Prueba refrescar desde la API o modificar los filtros de búsqueda.</p>
                   </td>
                 </tr>
               ) : (
-                filteredItems.map(item => {
+                paginatedItems.map((item, idx) => {
                   const hasVariants = item.variants && item.variants.length > 0;
                   const isExpanded = expandedRows[item.id];
                   const hasPromo = item.promotional_price && item.promotional_price > 0;
+                  const rowNumber = startIdx + idx;
 
                   return (
                     <React.Fragment key={item.id}>
                       <tr className="hover:bg-slate-50/80 transition-colors">
-                        {/* Expand Icon */}
+                        {/* Expand Icon / Number */}
                         <td className="py-3 px-4 text-center">
                           {hasVariants ? (
                             <button
                               onClick={() => toggleRow(item.id)}
                               className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
+                              title={isExpanded ? 'Contraer variantes' : `Expandir ${item.variants.length} variantes`}
                             >
-                              {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-red-600" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                              {isExpanded ? <ChevronDown className="w-4 h-4 text-red-600" /> : <ChevronRight className="w-4 h-4" />}
                             </button>
                           ) : (
-                            <span className="w-3.5 h-3.5 inline-block"></span>
+                            <span className="text-slate-400 font-mono text-[10px]">{rowNumber}</span>
                           )}
                         </td>
 
@@ -217,8 +298,8 @@ export default function TiendaNubeCatalog({
                                 <Package className="w-4 h-4" />
                               </div>
                             )}
-                            <div>
-                              <div className="font-semibold text-slate-900 flex items-center gap-2">
+                            <div className="max-w-md">
+                              <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
                                 <span>{item.name}</span>
                                 {item.free_shipping && (
                                   <span className="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.2 rounded border border-emerald-200 font-medium">
@@ -226,16 +307,21 @@ export default function TiendaNubeCatalog({
                                   </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
-                                {item.brand && <span className="text-slate-700 font-medium">{item.brand}</span>}
+                              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
+                                <span className="font-mono text-slate-400">ID #{item.id}</span>
+                                {item.brand && <span>• <strong className="text-slate-700">{item.brand}</strong></span>}
                                 {item.category_name && <span>• {item.category_name}</span>}
-                                {hasVariants && <span className="text-red-600 font-medium">({item.variants.length} variantes)</span>}
+                                {hasVariants && (
+                                  <span className="text-red-600 font-semibold">
+                                    ({item.variants.length} {item.variants.length === 1 ? 'variante' : 'variantes'})
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
                         </td>
 
-                        {/* SKU */}
+                        {/* SKU Padre */}
                         <td className="py-3 px-4 font-mono font-medium text-slate-700">
                           {item.sku || <span className="text-slate-400 italic">Sin SKU</span>}
                         </td>
@@ -317,13 +403,13 @@ export default function TiendaNubeCatalog({
                             <div className="border-l-2 border-red-600 pl-4 py-1 space-y-2">
                               <div className="text-[11px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1.5">
                                 <Tag className="w-3.5 h-3.5" />
-                                <span>Variantes del Producto (#{item.id})</span>
+                                <span>Variantes del Producto (#{item.id}) - {item.variants.length} configuradas</span>
                               </div>
                               <div className="grid grid-cols-1 gap-2">
                                 {item.variants.map((v, vIdx) => {
                                   const valuesStr = (v.values || []).map(val => val.es || Object.values(val)[0]).join(' / ');
                                   return (
-                                    <div key={v.id || vIdx} className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-xs text-xs">
+                                    <div key={v.id || vIdx} className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs text-xs">
                                       <div className="flex items-center gap-3">
                                         <span className="font-bold text-slate-900">
                                           {valuesStr || `Variante #${vIdx + 1}`}
@@ -331,6 +417,11 @@ export default function TiendaNubeCatalog({
                                         {v.sku && (
                                           <span className="text-[11px] text-slate-500 font-mono">
                                             SKU: <span className="text-slate-800 font-medium">{v.sku}</span>
+                                          </span>
+                                        )}
+                                        {v.barcode && (
+                                          <span className="text-[10px] text-slate-400 font-mono">
+                                            EAN: {v.barcode}
                                           </span>
                                         )}
                                       </div>
@@ -376,6 +467,71 @@ export default function TiendaNubeCatalog({
             </tbody>
           </table>
         </div>
+
+        {/* Barra de Paginación Inferior */}
+        {filteredItems.length > 0 && (
+          <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="text-slate-500 font-medium">
+              Página <strong className="text-slate-800">{currentPage}</strong> de <strong className="text-slate-800">{totalPages}</strong> ({filteredItems.length} productos totales)
+            </div>
+
+            {/* Controles de Navegación de Páginas */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:hover:bg-white shadow-2xs transition-colors"
+                title="Primera página"
+              >
+                <ChevronsLeft className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:hover:bg-white shadow-2xs transition-colors"
+                title="Página anterior"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Botones de Páginas Numéricas */}
+              <div className="flex items-center gap-1 mx-1">
+                {getPageNumbers().map(num => (
+                  <button
+                    key={num}
+                    onClick={() => setCurrentPage(num)}
+                    className={`min-w-[32px] h-8 px-2.5 rounded-xl text-xs font-bold transition-all ${
+                      currentPage === num
+                        ? 'bg-red-600 text-white shadow-md shadow-red-200'
+                        : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-2xs'
+                    }`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:hover:bg-white shadow-2xs transition-colors"
+                title="Página siguiente"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 disabled:opacity-40 disabled:hover:bg-white shadow-2xs transition-colors"
+                title="Última página"
+              >
+                <ChevronsRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal de Ajuste Rápido */}
