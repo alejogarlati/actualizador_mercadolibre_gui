@@ -258,6 +258,13 @@ export const fetchTiendanubeAudit = async (tolerancePct = 2.0) => {
   }
 };
 
+export const fixTiendanubeVariantsBatch = async (items) => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/audit/fix-batch`, {
+    items: items
+  });
+  return res.data;
+};
+
 export const executeTiendanubeSync = async (params = {}) => {
   const res = await axios.post(`${API_BASE_URL}/tiendanube/sync/execute`, params);
   return res.data;

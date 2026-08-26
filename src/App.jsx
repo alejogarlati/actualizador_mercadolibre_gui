@@ -68,6 +68,7 @@ import {
   refreshTiendanubeCategories,
   saveTiendanubeCategoryDiscount,
   fetchTiendanubeAudit,
+  fixTiendanubeVariantsBatch,
   fetchTiendanubeItemDetail,
   refreshTiendanubeCatalog,
   createTiendanubeProduct,
@@ -339,7 +340,17 @@ export default function App() {
       addToast('success', 'Precio Corregido en Tiendanube', `La variante fue actualizada al precio esperado: $${expectedPrice.toLocaleString('es-AR')}.`);
       await loadTiendanubeData();
     } catch (err) {
-      addToast('error', 'Error al corregir precio', err.message);
+      addToast('error', 'Error al corregir precio', err.response?.data?.detail || err.message);
+    }
+  };
+
+  const handleFixBatchVariantPrices = async (itemsToFix) => {
+    try {
+      const res = await fixTiendanubeVariantsBatch(itemsToFix);
+      addToast('success', 'Corrección en Lote Completada', `Se actualizaron ${res.updated || itemsToFix.length} variantes exitosamente en Tiendanube.`);
+      await loadTiendanubeData();
+    } catch (err) {
+      addToast('error', 'Error en corrección por lote', err.response?.data?.detail || err.message);
     }
   };
 
@@ -1103,6 +1114,7 @@ export default function App() {
                 loading={tnLoading}
                 onRefresh={loadTiendanubeData}
                 onFixPrice={handleFixVariantPrice}
+                onFixBatch={handleFixBatchVariantPrices}
                 tolerancePct={tnTolerancePct}
                 onToleranceChange={handleToleranceChange}
               />
