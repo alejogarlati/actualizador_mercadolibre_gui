@@ -1184,8 +1184,8 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: PUBLICACIONES (INVENTARIO) */}
-        {activeTab === 'items' && (
+        {/* TAB 2: PUBLICACIONES (INVENTARIO MERCADO LIBRE) */}
+        {selectedPlatform === 'mercadolibre' && activeTab === 'items' && (
           <div className="flex flex-col gap-5">
             
             {/* TOOLBAR */}
@@ -1455,8 +1455,8 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: SINCRONIZADOR ERP */}
-        {activeTab === 'sync' && (
+        {/* TAB 3: SINCRONIZADOR ERP MERCADO LIBRE */}
+        {selectedPlatform === 'mercadolibre' && activeTab === 'sync' && (
           <div className="flex flex-col gap-6 max-w-3xl">
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-5">
               <div>
@@ -1530,8 +1530,8 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 4: AUDITORÍA DE PRECIOS */}
-        {activeTab === 'audit' && (
+        {/* TAB 4: AUDITORÍA DE PRECIOS MERCADO LIBRE */}
+        {selectedPlatform === 'mercadolibre' && activeTab === 'audit' && (
           <div className="flex flex-col gap-5">
             <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-3">
@@ -1730,7 +1730,7 @@ export default function App() {
         )}
 
         {/* TAB 5: CALCULADORA & SIMULADOR ESTRATÉGICO v0.2.0 */}
-        {activeTab === 'calculator' && (
+        {selectedPlatform === 'mercadolibre' && activeTab === 'calculator' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <form onSubmit={handleCalculate} className="lg:col-span-6 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col gap-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1924,7 +1924,7 @@ export default function App() {
         )}
 
         {/* TAB 6: CONFIGURACIÓN INTEGRAL v0.2.0 */}
-        {activeTab === 'rules' && (
+        {selectedPlatform === 'mercadolibre' && activeTab === 'rules' && (
           <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col">
             {/* SUB-TABS HEADER */}
             <div className="flex border-b border-slate-200 bg-slate-50/60 p-2 gap-2">
