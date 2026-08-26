@@ -33,7 +33,7 @@ export default function TiendaNubeProductModal({
   const [published, setPublished] = useState(true);
 
   // Atributos (hasta 3)
-  const [attributes, setAttributes] = useState([]); // ['Color', 'Espesor']
+  const [attributes, setAttributes] = useState([]);
 
   // Variantes
   const [variants, setVariants] = useState([
@@ -48,7 +48,6 @@ export default function TiendaNubeProductModal({
     }
   ]);
 
-  // Cargar datos si estamos en modo edición
   useEffect(() => {
     if (productData) {
       setName(productData.name || '');
@@ -59,14 +58,12 @@ export default function TiendaNubeProductModal({
       setFreeShipping(Boolean(productData.free_shipping));
       setPublished(productData.status !== 'hidden');
 
-      // Cargar atributos existentes
       if (productData.attributes && Array.isArray(productData.attributes)) {
         setAttributes(productData.attributes.map(a => a.es || Object.values(a)[0]));
       } else {
         setAttributes([]);
       }
 
-      // Cargar variantes existentes
       if (productData.variants && productData.variants.length > 0) {
         setVariants(productData.variants.map(v => ({
           id: v.id,
@@ -92,7 +89,6 @@ export default function TiendaNubeProductModal({
         ]);
       }
     } else {
-      // Reset form
       setName('');
       setDescription('');
       setBrand('');
@@ -115,13 +111,11 @@ export default function TiendaNubeProductModal({
     }
   }, [productData, isOpen]);
 
-  // Manejo de atributos (Máx 3)
   const addAttribute = () => {
     if (attributes.length >= 3) return;
     const newAttrName = `Atributo ${attributes.length + 1}`;
     setAttributes([...attributes, newAttrName]);
 
-    // Actualizar cada variante agregándole un slot vacío
     setVariants(prev => prev.map(v => ({
       ...v,
       values: [...(v.values || []), '']
@@ -132,7 +126,6 @@ export default function TiendaNubeProductModal({
     const updatedAttrs = attributes.filter((_, i) => i !== index);
     setAttributes(updatedAttrs);
 
-    // Actualizar variantes removiendo esa columna de valores
     setVariants(prev => prev.map(v => ({
       ...v,
       values: (v.values || []).filter((_, i) => i !== index)
@@ -145,7 +138,6 @@ export default function TiendaNubeProductModal({
     setAttributes(updated);
   };
 
-  // Manejo de Variantes
   const addVariant = () => {
     const baseVariant = variants[0] || {};
     setVariants([
@@ -188,7 +180,6 @@ export default function TiendaNubeProductModal({
       return;
     }
 
-    // Validar variantes
     const formattedVariants = variants.map(v => {
       const payload = {
         price: parseFloat(v.price) || 0.0,
@@ -228,19 +219,19 @@ export default function TiendaNubeProductModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-gray-900 border border-gray-800 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col my-8 max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
+      <div className="bg-white border border-slate-200 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col my-8 max-h-[90vh]">
         {/* Header */}
-        <div className="p-5 bg-gray-950/70 border-b border-gray-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+        <div className="p-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="p-3 rounded-xl bg-red-50 text-red-600 border border-red-200">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-lg font-bold text-slate-900">
                 {isEditing ? `Editar Producto #${productData.id}` : 'Crear Nuevo Producto en Tiendanube'}
               </h2>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-slate-500">
                 Configura catálogo, variantes multilingües y stock integrado
               </p>
             </div>
@@ -248,21 +239,21 @@ export default function TiendaNubeProductModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Selector */}
-        <div className="px-5 pt-3 bg-gray-950/40 border-b border-gray-800 flex gap-4 text-xs font-semibold">
+        <div className="px-6 pt-3 bg-slate-50/50 border-b border-slate-200 flex gap-6 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setActiveTab('general')}
             className={`pb-2.5 border-b-2 transition-colors ${
               activeTab === 'general'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-gray-400 hover:text-gray-200'
+                ? 'border-red-600 text-red-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             Datos Generales & Precios
@@ -272,12 +263,12 @@ export default function TiendaNubeProductModal({
             onClick={() => setActiveTab('variants')}
             className={`pb-2.5 border-b-2 flex items-center gap-1.5 transition-colors ${
               activeTab === 'variants'
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-gray-400 hover:text-gray-200'
+                ? 'border-red-600 text-red-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
             <span>Matriz de Variantes</span>
-            <span className="px-1.5 py-0.2 rounded-full bg-gray-800 text-[10px] font-mono text-gray-300">
+            <span className="px-2 py-0.2 rounded-full bg-slate-200 text-[10px] font-mono font-bold text-slate-700">
               {variants.length}
             </span>
           </button>
@@ -289,8 +280,8 @@ export default function TiendaNubeProductModal({
             <div className="space-y-4">
               {/* Nombre */}
               <div>
-                <label className="block text-gray-300 font-medium mb-1">
-                  Nombre del Producto <span className="text-red-400">*</span>
+                <label className="block text-slate-700 font-bold mb-1">
+                  Nombre del Producto <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -298,29 +289,29 @@ export default function TiendaNubeProductModal({
                   placeholder="Ej: Cemento Portland Holcim 50kg"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-gray-950 text-white px-3.5 py-2.5 rounded-xl border border-gray-800 focus:border-blue-500 focus:outline-none"
+                  className="w-full bg-slate-50 text-slate-900 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none font-medium"
                 />
               </div>
 
               {/* Marca & Categoría */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-gray-300 font-medium mb-1">Marca</label>
+                  <label className="block text-slate-700 font-bold mb-1">Marca</label>
                   <input
                     type="text"
                     placeholder="Ej: Holcim, Barbieri, Weber"
                     value={brand}
                     onChange={(e) => setBrand(e.target.value)}
-                    className="w-full bg-gray-950 text-white px-3.5 py-2.5 rounded-xl border border-gray-800 focus:border-blue-500 focus:outline-none"
+                    className="w-full bg-slate-50 text-slate-900 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-gray-300 font-medium mb-1">Categoría</label>
+                  <label className="block text-slate-700 font-bold mb-1">Categoría</label>
                   <select
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full bg-gray-950 text-gray-200 px-3.5 py-2.5 rounded-xl border border-gray-800 focus:border-blue-500 focus:outline-none"
+                    className="w-full bg-slate-50 text-slate-800 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none"
                   >
                     <option value="">Sin categoría principal</option>
                     {categories.map(c => (
@@ -332,71 +323,71 @@ export default function TiendaNubeProductModal({
 
               {/* Descripción */}
               <div>
-                <label className="block text-gray-300 font-medium mb-1">Descripción / Ficha Técnica</label>
+                <label className="block text-slate-700 font-bold mb-1">Descripción / Ficha Técnica</label>
                 <textarea
                   rows="3"
                   placeholder="Descripción del producto o características..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-gray-950 text-white px-3.5 py-2.5 rounded-xl border border-gray-800 focus:border-blue-500 focus:outline-none"
+                  className="w-full bg-slate-50 text-slate-900 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none"
                 />
               </div>
 
-              {/* Tags / Etiquetas */}
+              {/* Tags */}
               <div>
-                <label className="block text-gray-300 font-medium mb-1">Etiquetas (Separadas por comas)</label>
+                <label className="block text-slate-700 font-bold mb-1">Etiquetas (Separadas por comas)</label>
                 <input
                   type="text"
                   placeholder="construccion, cemento, albañileria"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
-                  className="w-full bg-gray-950 text-white px-3.5 py-2.5 rounded-xl border border-gray-800 focus:border-blue-500 focus:outline-none"
+                  className="w-full bg-slate-50 text-slate-900 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none"
                 />
               </div>
 
-              {/* Switches de Envío y Publicación */}
+              {/* Switches */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <label className="flex items-center gap-3 p-3 bg-gray-950 rounded-xl border border-gray-800 cursor-pointer">
+                <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100/60 transition-colors">
                   <input
                     type="checkbox"
                     checked={freeShipping}
                     onChange={(e) => setFreeShipping(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-0 bg-gray-900 border-gray-700"
+                    className="w-4 h-4 rounded text-red-600 focus:ring-0 bg-white border-slate-300"
                   />
                   <div>
-                    <span className="font-semibold text-gray-200 block">Envío Gratis</span>
-                    <span className="text-[11px] text-gray-400">Marcar este producto con flete bonificado</span>
+                    <span className="font-bold text-slate-900 block">Envío Gratis</span>
+                    <span className="text-[11px] text-slate-500">Marcar este producto con flete bonificado</span>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 p-3 bg-gray-950 rounded-xl border border-gray-800 cursor-pointer">
+                <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100/60 transition-colors">
                   <input
                     type="checkbox"
                     checked={published}
                     onChange={(e) => setPublished(e.target.checked)}
-                    className="w-4 h-4 rounded text-blue-600 focus:ring-0 bg-gray-900 border-gray-700"
+                    className="w-4 h-4 rounded text-red-600 focus:ring-0 bg-white border-slate-300"
                   />
                   <div>
-                    <span className="font-semibold text-gray-200 block">Publicado / Activo</span>
-                    <span className="text-[11px] text-gray-400">Visible inmediatamente en la tienda online</span>
+                    <span className="font-bold text-slate-900 block">Publicado / Activo</span>
+                    <span className="text-[11px] text-slate-500">Visible inmediatamente en la tienda online</span>
                   </div>
                 </label>
               </div>
             </div>
           ) : (
             <div className="space-y-5">
-              {/* Sección de Atributos del Producto */}
-              <div className="p-4 bg-gray-950 rounded-xl border border-gray-800 space-y-3">
+              {/* Atributos del Producto */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-bold text-gray-200">Atributos del Producto</h4>
-                    <p className="text-[11px] text-gray-400">Tiendanube permite un máximo estricto de 3 atributos (ej. Color, Medida, Espesor).</p>
+                    <h4 className="font-bold text-slate-900">Atributos del Producto</h4>
+                    <p className="text-[11px] text-slate-500">Tiendanube permite un máximo de 3 atributos (ej. Color, Medida, Espesor).</p>
                   </div>
                   <button
                     type="button"
                     onClick={addAttribute}
                     disabled={attributes.length >= 3}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-blue-400 border border-gray-700 disabled:opacity-40"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-red-600 border border-slate-200 shadow-xs disabled:opacity-40"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Agregar Atributo ({attributes.length}/3)</span>
@@ -404,20 +395,20 @@ export default function TiendaNubeProductModal({
                 </div>
 
                 {attributes.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                     {attributes.map((attr, aIdx) => (
-                      <div key={aIdx} className="flex items-center gap-1.5 bg-gray-900 p-2 rounded-lg border border-gray-800">
+                      <div key={aIdx} className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
                         <input
                           type="text"
                           value={attr}
                           onChange={(e) => updateAttributeName(aIdx, e.target.value)}
                           placeholder={`Atributo #${aIdx+1}`}
-                          className="bg-transparent text-white font-medium text-xs focus:outline-none w-full"
+                          className="bg-transparent text-slate-900 font-bold text-xs focus:outline-none w-full"
                         />
                         <button
                           type="button"
                           onClick={() => removeAttribute(aIdx)}
-                          className="text-gray-500 hover:text-red-400 p-1"
+                          className="text-slate-400 hover:text-red-600 p-1"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -430,11 +421,11 @@ export default function TiendaNubeProductModal({
               {/* Matriz de Variantes */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-gray-200">Variantes ({variants.length})</h4>
+                  <h4 className="font-bold text-slate-900">Variantes ({variants.length})</h4>
                   <button
                     type="button"
                     onClick={addVariant}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20"
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Agregar Variante</span>
@@ -443,95 +434,93 @@ export default function TiendaNubeProductModal({
 
                 <div className="space-y-3">
                   {variants.map((v, vIdx) => (
-                    <div key={vIdx} className="p-4 bg-gray-950 rounded-xl border border-gray-800 space-y-3">
-                      <div className="flex items-center justify-between pb-2 border-b border-gray-800/80">
-                        <span className="font-bold text-gray-300">Variante #{vIdx + 1}</span>
+                    <div key={vIdx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                        <span className="font-bold text-slate-900">Variante #{vIdx + 1}</span>
                         {variants.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeVariant(vIdx)}
-                            className="text-gray-500 hover:text-red-400 p-1 rounded"
+                            className="text-slate-400 hover:text-red-600 p-1 rounded"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         )}
                       </div>
 
-                      {/* Inputs para los valores de atributos si existen */}
                       {attributes.length > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           {attributes.map((attr, aIdx) => (
                             <div key={aIdx}>
-                              <label className="block text-[11px] text-blue-400 font-medium mb-1">{attr}</label>
+                              <label className="block text-[11px] text-red-600 font-bold mb-1">{attr}</label>
                               <input
                                 type="text"
                                 placeholder={`Ej: ${attr === 'Color' ? 'Rojo' : '50kg'}`}
                                 value={v.values?.[aIdx] || ''}
                                 onChange={(e) => updateVariantValue(vIdx, aIdx, e.target.value)}
-                                className="w-full bg-gray-900 text-white px-3 py-2 rounded-lg border border-gray-800 focus:border-blue-500 focus:outline-none"
+                                className="w-full bg-white text-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none font-medium"
                               />
                             </div>
                           ))}
                         </div>
                       )}
 
-                      {/* Precios, Costo, Stock y SKU de la variante */}
                       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                         <div>
-                          <label className="block text-[11px] text-gray-400 mb-1">Precio Lista ($) *</label>
+                          <label className="block text-[11px] text-slate-600 font-medium mb-1">Precio Lista ($) *</label>
                           <input
                             type="number"
                             step="0.01"
                             required
                             value={v.price}
                             onChange={(e) => updateVariantField(vIdx, 'price', e.target.value)}
-                            className="w-full bg-gray-900 text-white font-mono px-3 py-2 rounded-lg border border-gray-800 focus:border-blue-500 focus:outline-none"
+                            className="w-full bg-white text-slate-900 font-mono font-bold px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-[11px] text-gray-400 mb-1">Precio Oferta ($)</label>
+                          <label className="block text-[11px] text-slate-600 font-medium mb-1">Precio Oferta ($)</label>
                           <input
                             type="number"
                             step="0.01"
                             placeholder="Opcional"
                             value={v.promotional_price}
                             onChange={(e) => updateVariantField(vIdx, 'promotional_price', e.target.value)}
-                            className="w-full bg-gray-900 text-emerald-400 font-mono px-3 py-2 rounded-lg border border-gray-800 focus:border-blue-500 focus:outline-none"
+                            className="w-full bg-white text-emerald-600 font-mono font-bold px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-[11px] text-gray-400 mb-1">Costo ERP ($)</label>
+                          <label className="block text-[11px] text-slate-600 font-medium mb-1">Costo ERP ($)</label>
                           <input
                             type="number"
                             step="0.01"
                             placeholder="Opcional"
                             value={v.cost}
                             onChange={(e) => updateVariantField(vIdx, 'cost', e.target.value)}
-                            className="w-full bg-gray-900 text-gray-400 font-mono px-3 py-2 rounded-lg border border-gray-800 focus:border-blue-500 focus:outline-none"
+                            className="w-full bg-white text-slate-600 font-mono font-medium px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-[11px] text-gray-400 mb-1">Stock (Unidades)</label>
+                          <label className="block text-[11px] text-slate-600 font-medium mb-1">Stock (Unidades)</label>
                           <input
                             type="number"
                             placeholder="Infinito"
                             value={v.stock}
                             onChange={(e) => updateVariantField(vIdx, 'stock', e.target.value)}
-                            className="w-full bg-gray-900 text-white font-mono px-3 py-2 rounded-lg border border-gray-800 focus:border-blue-500 focus:outline-none"
+                            className="w-full bg-white text-slate-900 font-mono font-bold px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
                           />
                         </div>
 
                         <div>
-                          <label className="block text-[11px] text-gray-400 mb-1">SKU</label>
+                          <label className="block text-[11px] text-slate-600 font-medium mb-1">SKU</label>
                           <input
                             type="text"
                             placeholder="Ej: CEM-HOL-50"
                             value={v.sku}
                             onChange={(e) => updateVariantField(vIdx, 'sku', e.target.value)}
-                            className="w-full bg-gray-900 text-gray-300 font-mono px-3 py-2 rounded-lg border border-gray-800 focus:border-blue-500 focus:outline-none"
+                            className="w-full bg-white text-slate-800 font-mono px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
                           />
                         </div>
                       </div>
@@ -543,18 +532,18 @@ export default function TiendaNubeProductModal({
           )}
 
           {/* Footer Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+              className="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
             >
               Cancelar
             </button>
 
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/20"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200"
             >
               <Save className="w-4 h-4" />
               <span>{isEditing ? 'Guardar Cambios' : 'Crear Producto'}</span>

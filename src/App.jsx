@@ -40,7 +40,9 @@ import {
   Layers,
   Sparkles,
   SlidersHorizontal,
-  Tag
+  Tag,
+  ArrowLeft,
+  ShoppingBag
 } from 'lucide-react';
 import { 
   checkHealth, 
@@ -70,7 +72,7 @@ import {
   fetchTiendanubeCategories
 } from './services/api';
 
-import PlatformSwitcher from './components/common/PlatformSwitcher';
+import PlatformSelectorScreen from './components/common/PlatformSelectorScreen';
 import TiendaNubeDashboard from './components/tiendanube/TiendaNubeDashboard';
 import TiendaNubeCatalog from './components/tiendanube/TiendaNubeCatalog';
 import TiendaNubeProductModal from './components/tiendanube/TiendaNubeProductModal';
@@ -78,7 +80,7 @@ import TiendaNubeSyncModal from './components/tiendanube/TiendaNubeSyncModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedPlatform, setSelectedPlatform] = useState('mercadolibre'); // 'mercadolibre' | 'tiendanube'
+  const [selectedPlatform, setSelectedPlatform] = useState(null); // null (Hub) | 'mercadolibre' | 'tiendanube'
   const [health, setHealth] = useState({ status: 'checking', token_valid: false });
   const [stats, setStats] = useState(null);
 
@@ -624,6 +626,21 @@ export default function App() {
       return 0;
     });
 
+  // Si no hay plataforma seleccionada, mostrar pantalla inicial de elección
+  if (!selectedPlatform) {
+    return (
+      <PlatformSelectorScreen
+        meliHealth={health}
+        tnHealth={tnHealth}
+        onSelectPlatform={(p) => {
+          setSelectedPlatform(p);
+          setActiveTab('dashboard');
+          if (p === 'tiendanube') loadTiendanubeData();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex h-screen w-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
       
@@ -636,14 +653,14 @@ export default function App() {
               toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' :
               toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-900' :
               toast.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-900' :
-              'bg-blue-50 border-blue-200 text-blue-900'
+              'bg-slate-50 border-slate-200 text-slate-900'
             }`}
           >
             <div className="mt-0.5 shrink-0">
               {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
               {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-red-600" />}
               {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-600" />}
-              {toast.type === 'info' && <Info className="w-5 h-5 text-blue-600" />}
+              {toast.type === 'info' && <Info className="w-5 h-5 text-slate-600" />}
             </div>
             <div className="flex-1 min-w-0">
               <h4 className="font-semibold">{toast.title}</h4>
@@ -697,76 +714,127 @@ export default function App() {
         </div>
       )}
 
-      {/* SIDEBAR NAVEGACIÓN */}
+      {/* SIDEBAR NAVEGACIÓN DEDICADO */}
       <aside className="w-72 bg-white border-r border-slate-200 flex flex-col p-5 shrink-0 justify-between">
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
           
-          {/* LOGO & BRAND */}
+          {/* BOTÓN PARA CAMBIAR DE CANAL */}
+          <button
+            onClick={() => setSelectedPlatform(null)}
+            className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl text-xs font-bold text-slate-600 bg-slate-100 hover:bg-red-50 hover:text-red-600 border border-slate-200 hover:border-red-200 transition-all shadow-2xs"
+            title="Volver a la selección inicial de canales"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>← Cambiar de Canal / Inicio</span>
+          </button>
+
+          {/* LOGO & BRAND DE LA PLATAFORMA ACTIVA */}
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-            <div className="p-2.5 bg-red-600 text-white rounded-xl shadow-md shadow-red-200">
-              <RefreshCw className="w-6 h-6" />
+            <div className="p-2.5 bg-red-600 text-white rounded-xl shadow-md shadow-red-200 flex items-center justify-center">
+              {selectedPlatform === 'tiendanube' ? (
+                <ShoppingBag className="w-6 h-6" />
+              ) : (
+                <RefreshCw className="w-6 h-6" />
+              )}
             </div>
             <div>
-              <h1 className="font-bold text-slate-900 leading-tight">Sync MeLi</h1>
-              <p className="text-xs text-slate-500 font-medium">Corralón Aconquija</p>
+              <h1 className="font-bold text-slate-900 leading-tight">
+                {selectedPlatform === 'tiendanube' ? 'Sync Tiendanube' : 'Sync MeLi'}
+              </h1>
+              <p className="text-xs text-red-600 font-semibold uppercase tracking-wider">
+                {selectedPlatform === 'tiendanube' ? 'Nuvemshop • Corralón' : 'Mercado Libre • Corralón'}
+              </p>
             </div>
           </div>
 
-          {/* MENÚ DE SECCIONES */}
+          {/* MENÚ DE SECCIONES ESPECÍFICO DE LA PLATAFORMA */}
           <nav className="flex flex-col gap-1.5">
-            <button 
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                activeTab === 'dashboard' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-              onClick={() => setActiveTab('dashboard')}
-            >
-              <LayoutDashboard className="w-4 h-4" /> Dashboard
-            </button>
+            {selectedPlatform === 'tiendanube' ? (
+              <>
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'dashboard' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('dashboard')}
+                >
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard Tiendanube
+                </button>
 
-            <button 
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                activeTab === 'items' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-              onClick={() => setActiveTab('items')}
-            >
-              <PackageSearch className="w-4 h-4" /> Publicaciones
-            </button>
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'items' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('items')}
+                >
+                  <PackageSearch className="w-4 h-4" /> Catálogo & Variantes
+                </button>
 
-            <button 
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                activeTab === 'sync' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-              onClick={() => setActiveTab('sync')}
-            >
-              <UploadCloud className="w-4 h-4" /> Sincronizador ERP
-            </button>
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'sync' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setTnSyncModalOpen(true)}
+                >
+                  <UploadCloud className="w-4 h-4" /> Sincronizador ERP Masivo
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'dashboard' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('dashboard')}
+                >
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard
+                </button>
 
-            <button 
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                activeTab === 'audit' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-              onClick={() => { setActiveTab('audit'); if(!auditReport) loadAuditReport(); }}
-            >
-              <ShieldCheck className="w-4 h-4" /> Auditoría de Precios
-            </button>
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'items' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('items')}
+                >
+                  <PackageSearch className="w-4 h-4" /> Publicaciones
+                </button>
 
-            <button 
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                activeTab === 'calculator' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-              onClick={() => setActiveTab('calculator')}
-            >
-              <Calculator className="w-4 h-4" /> Calculadora & Simulador
-            </button>
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'sync' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('sync')}
+                >
+                  <UploadCloud className="w-4 h-4" /> Sincronizador ERP
+                </button>
 
-            <button 
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
-                activeTab === 'rules' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-              onClick={() => setActiveTab('rules')}
-            >
-              <SettingsIcon className="w-4 h-4" /> Configuración
-            </button>
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'audit' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => { setActiveTab('audit'); if(!auditReport) loadAuditReport(); }}
+                >
+                  <ShieldCheck className="w-4 h-4" /> Auditoría de Precios
+                </button>
+
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'calculator' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('calculator')}
+                >
+                  <Calculator className="w-4 h-4" /> Calculadora & Simulador
+                </button>
+
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'rules' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('rules')}
+                >
+                  <SettingsIcon className="w-4 h-4" /> Configuración
+                </button>
+              </>
+            )}
           </nav>
         </div>
 
@@ -811,50 +879,39 @@ export default function App() {
         {/* PAGE HEADER & ESTADO DE AUTENTICACIÓN */}
         <header className="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-slate-200 gap-4">
           <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-                {selectedPlatform === 'tiendanube' ? (
-                  activeTab === 'items' ? 'Catálogo de Productos Tiendanube' :
-                  activeTab === 'sync' ? 'Sincronizador Masivo Tiendanube' :
-                  'Panel Multicanal Tiendanube'
-                ) : (
-                  activeTab === 'dashboard' ? 'Panel de Control & Analíticas' :
-                  activeTab === 'items' ? 'Inventario de Publicaciones' :
-                  activeTab === 'sync' ? 'Sincronizador Masivo desde ERP' :
-                  activeTab === 'audit' ? 'Auditoría de Neto a Recibir' :
-                  activeTab === 'calculator' ? 'Calculadora & Simulador Estratégico' :
-                  'Configuración del Sistema'
-                )}
-              </h2>
-            </div>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              {selectedPlatform === 'tiendanube' ? (
+                activeTab === 'items' ? 'Catálogo de Productos Tiendanube' :
+                activeTab === 'sync' ? 'Sincronizador Masivo Tiendanube' :
+                'Panel Tiendanube • Corralón Aconquija'
+              ) : (
+                activeTab === 'dashboard' ? 'Panel de Control & Analíticas' :
+                activeTab === 'items' ? 'Inventario de Publicaciones' :
+                activeTab === 'sync' ? 'Sincronizador Masivo desde ERP' :
+                activeTab === 'audit' ? 'Auditoría de Neto a Recibir' :
+                activeTab === 'calculator' ? 'Calculadora & Simulador Estratégico' :
+                'Configuración del Sistema'
+              )}
+            </h2>
             <p className="text-xs text-slate-500 mt-1">
               {selectedPlatform === 'tiendanube'
-                ? 'Gestión multicanal directa, catálogo con variantes multilingües y sincronización con Nuvemshop'
+                ? 'Gestión directa de catálogo, matriz de variantes y sincronización masiva con Nuvemshop'
                 : 'Gestión automatizada de precios, márgenes y analíticas para Mercado Libre'}
             </p>
           </div>
 
-          {/* PLATFORM SWITCHER & BADGE DE CONEXIÓN */}
+          {/* BADGES DE CONEXIÓN & ACCIÓN DE CAMBIAR CANAL */}
           <div className="flex items-center gap-3 self-end md:self-auto">
-            {/* Conmutador de Plataforma */}
-            <PlatformSwitcher
-              selectedPlatform={selectedPlatform}
-              onSelectPlatform={(p) => {
-                setSelectedPlatform(p);
-                if (p === 'tiendanube') loadTiendanubeData();
-              }}
-            />
-
             {/* Badges de Conexión según Plataforma */}
             {selectedPlatform === 'tiendanube' ? (
               <div className="flex items-center gap-2">
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
                   tnHealth.status === 'online'
-                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : 'bg-red-50 text-red-700 border-red-200'
                 }`}>
-                  <div className={`w-2 h-2 rounded-full ${tnHealth.status === 'online' ? 'bg-blue-500 animate-pulse' : 'bg-red-500'}`} />
-                  {tnHealth.status === 'online' ? `Tiendanube #${tnHealth.store_id || '8145042'}` : 'Tiendanube Desconectado'}
+                  <div className={`w-2 h-2 rounded-full ${tnHealth.status === 'online' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                  {tnHealth.status === 'online' ? `Tienda #${tnHealth.store_id || '8145042'}` : 'Tiendanube Desconectado'}
                 </div>
 
                 <button
@@ -863,7 +920,7 @@ export default function App() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-colors disabled:opacity-50"
                   title="Recomprobar conexión a Tiendanube"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${tnLoading ? 'animate-spin text-blue-600' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${tnLoading ? 'animate-spin text-red-600' : ''}`} />
                   {tnLoading ? 'Verificando...' : 'Reconectar'}
                 </button>
               </div>
@@ -889,6 +946,15 @@ export default function App() {
                 </button>
               </div>
             )}
+
+            <button
+              onClick={() => setSelectedPlatform(null)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-red-50 text-slate-700 hover:text-red-600 border border-slate-200 hover:border-red-200 shadow-sm transition-all"
+              title="Volver a la selección de plataforma"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Cambiar Canal</span>
+            </button>
           </div>
         </header>
 
