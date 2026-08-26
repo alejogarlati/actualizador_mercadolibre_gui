@@ -14,7 +14,7 @@ import {
 import { executeTiendanubeSync, fetchTiendanubeSyncStatus, uploadCSV } from '../../services/api';
 
 export default function TiendaNubeSyncModal({ isOpen, onClose, onSyncFinished }) {
-  const [marginPct, setMarginPct] = useState(25.0);
+  const [marginPct, setMarginPct] = useState(0.0);
   const [syncPrices, setSyncPrices] = useState(true);
   const [syncStock, setSyncStock] = useState(true);
   const [file, setFile] = useState(null);
@@ -121,28 +121,49 @@ export default function TiendaNubeSyncModal({ isOpen, onClose, onSyncFinished })
             </p>
           </div>
 
-          {/* Margen Comercial */}
+          {/* Banner de Reglas Aplicadas */}
+          <div className="p-4 bg-red-50/70 border border-red-200 rounded-2xl space-y-1.5">
+            <div className="flex items-center gap-2 text-red-700 font-bold text-xs">
+              <Sliders className="w-4 h-4" />
+              <span>Motor de Reglas y Descuentos Activo</span>
+            </div>
+            <p className="text-[11px] text-slate-600 leading-relaxed">
+              El sincronizador leerá los costos del CSV y aplicará automáticamente el <strong>descuento de la categoría</strong> asignada (ej. <em>Melaminas y MDF: 35%</em>) o el <strong>descuento personalizado de la variante</strong> si existe.
+            </p>
+          </div>
+
+          {/* Descuento / Margen General por Defecto (Fallback) */}
           <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-red-600" />
-                <span className="font-bold text-slate-900">Margen Comercial sobre Costo</span>
+              <div>
+                <span className="font-bold text-slate-900 block">Factor / Margen por Defecto (Fallback)</span>
+                <span className="text-[11px] text-slate-500">Solo aplica a productos sin categoría ni descuento configurado</span>
               </div>
-              <div className="flex items-center gap-1 font-mono font-black text-sm text-red-600 bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-xs">
-                <span>+{marginPct}%</span>
+              <div className="flex items-center gap-1 font-mono font-bold text-xs text-slate-700 bg-white px-3 py-1 rounded-xl border border-slate-200 shadow-xs">
+                <span>{marginPct > 0 ? `+${marginPct}% recargo` : marginPct < 0 ? `${marginPct}% desc.` : '0% (Precio Costo Base)'}</span>
               </div>
             </div>
 
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="0.5"
-              value={marginPct}
-              onChange={(e) => setMarginPct(e.target.value)}
-              disabled={isRunning}
-              className="w-full accent-red-600 bg-slate-200 h-2 rounded-lg cursor-pointer"
-            />
+            <div className="flex items-center gap-3">
+              <input
+                type="range"
+                min="-50"
+                max="50"
+                step="0.5"
+                value={marginPct}
+                onChange={(e) => setMarginPct(parseFloat(e.target.value))}
+                disabled={isRunning}
+                className="w-full accent-red-600 bg-slate-200 h-2 rounded-lg cursor-pointer"
+              />
+              <button
+                type="button"
+                onClick={() => setMarginPct(0.0)}
+                className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100"
+                title="Restablecer a 0%"
+              >
+                Reset 0%
+              </button>
+            </div>
           </div>
 
           {/* Opciones de Sincronización */}
