@@ -7,6 +7,27 @@ y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.4.0] - 2026-08-26
+
+### 🛍️ Catálogo de Variantes Independientes, Árbol Jerárquico de Categorías y Auditoría con Acciones en Lote
+- **📋 Catálogo Centrado en Variantes Independientes (`src/components/tiendanube/TiendaNubeCatalog.jsx`):**
+  - Cada fila representa una variante única con sus atributos específicos (Color, Medida, Espesor), SKU, costo ERP, factor de descuento aplicado y precio publicado.
+  - Modal de factor discrecional (`%`) por variante con impacto y actualización instantánea en la API de Tiendanube.
+  - Paginación dinámica y selector de cantidad por página (15, 25, 50, 100, Todos).
+- **📁 Gestión Jerárquica de Categorías y Subcategorías (`src/components/tiendanube/TiendaNubeCategoriesView.jsx`):**
+  - Vista en árbol con indentación y badges visuales para categorías padre e hijas.
+  - Inputs para asignar porcentajes de descuento por categoría con herencia visual automática hacia las subcategorías.
+  - Botón de refresco forzado directo desde la API oficial de Tiendanube con soporte multi-página.
+- **🛡️ Auditoría Financiera con Selección Múltiple y Acciones en Lote (`src/components/tiendanube/TiendaNubeAuditView.jsx`):**
+  - Checkboxes individuales y en cabecera para marcar variantes desactualizadas (`🔴 DIFERENCIA`).
+  - Botón rápido *"Seleccionar todas las diferencias"*.
+  - Barra flotante inferior de acciones en lote: **`⚡ Corregir X productos seleccionados`** con spinners de carga en vivo y transición instantánea a **`🟢 OK`**.
+  - Selector de tolerancia configurable (±0.5% a ±10.0%).
+- **⚡ Modal de Sincronización ERP (`src/components/tiendanube/TiendaNubeSyncModal.jsx`):**
+  - Rediseño con énfasis en las reglas jerárquicas activas y slider de fallback fijado en `0%` por defecto.
+
+---
+
 ## [0.3.0] - 2026-08-26
 
 ### 🛍️ Experiencia de Usuario Multicanal (Mercado Libre + Tiendanube)

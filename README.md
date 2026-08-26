@@ -5,7 +5,7 @@ Interfaz gráfica de escritorio moderna desarrollada con **Electron**, **React 1
 ---
 
 ## 📚 Documentación y Enlaces
-- **[📝 Registro de Cambios (Changelog)](CHANGELOG.md):** Historial de versiones (`v0.3.0`) y nuevas características de la GUI.
+- **[📝 Registro de Cambios (Changelog)](CHANGELOG.md):** Historial de versiones (`v0.4.0`) y nuevas características de la GUI.
 - **[🗺️ Roadmap del Frontend](ROADMAP.md):** Seguimiento de fases implementadas y próximas versiones.
 - **[📖 Manual de Usuario General](../actualizador_mercadolibre/MANUAL_DE_USUARIO.md):** Guía operativa paso a paso de toda la plataforma.
 - **[⚙️ Documentación del Backend API](../actualizador_mercadolibre/README.md):** Especificación técnica de endpoints REST y base de datos SQLite.
@@ -22,13 +22,17 @@ Interfaz gráfica de escritorio moderna desarrollada con **Electron**, **React 1
 
 ### 🛍️ 2. Módulo de Tiendanube (Nuvemshop)
 * **Dashboard Tiendanube ([`TiendaNubeDashboard.jsx`](src/components/tiendanube/TiendaNubeDashboard.jsx)):** Estado de conexión en vivo con ID de tienda, KPIs de inventario (Total, Activos, Sin Stock, Valuación $) y accesos directos.
-* **Catálogo & Variantes ([`TiendaNubeCatalog.jsx`](src/components/tiendanube/TiendaNubeCatalog.jsx)):**
-  * Tabla con thumbnails, búsqueda en tiempo real por SKU (padre y variante), marca o título.
-  * **Paginación Interactiva:** Selector de items por página (15, 25, 50, 100 o Todos) y barra de navegación de páginas con autoreset.
-  * Acordeón desplegable para consultar y editar variantes hijas con sus precios y existencias.
-  * Modal de ajuste rápido para modificar precios y stock en 1 clic.
-* **Modal Integral de Producto ([`TiendaNubeProductModal.jsx`](src/components/tiendanube/TiendaNubeProductModal.jsx)):** Formulario de alta y edición con constructor dinámico de hasta 3 atributos y matriz de combinaciones.
-* **Sincronización Masiva ERP ([`TiendaNubeSyncModal.jsx`](src/components/tiendanube/TiendaNubeSyncModal.jsx)):** Subida de CSV de mostrador, slider de margen comercial (+0% a +100%), barra de progreso en vivo y consola de logs.
+* **Catálogo de Variantes ([`TiendaNubeCatalog.jsx`](src/components/tiendanube/TiendaNubeCatalog.jsx)):**
+  * Cada fila representa una variante independiente con atributos (ej: 18mm, Blanco), SKU, costo ERP, factor de descuento y precio publicado.
+  * Paginación interactiva (15, 25, 50, 100 o Todos) con barra de navegación dinámica.
+  * Modal de factor discrecional (`%`) con cálculo en vivo e impacto inmediato en la API de Tiendanube.
+* **Reglas de Descuento por Categoría ([`TiendaNubeCategoriesView.jsx`](src/components/tiendanube/TiendaNubeCategoriesView.jsx)):**
+  * Árbol de categorías y subcategorías (ej: *Melaminas y MDF > Tableros/Placas*) con inputs de `% Descuento` y herencia visual.
+  * Botón de sincronización forzada multi-página directa desde la API de Tiendanube.
+* **Auditoría Financiera y Corrección en Lote ([`TiendaNubeAuditView.jsx`](src/components/tiendanube/TiendaNubeAuditView.jsx)):**
+  * Comparativa variante por variante contra costo ERP con dictamen `OK`, `DIFERENCIA` o `SIN_ERP`.
+  * Selección múltiple con barra flotante para **`⚡ Corregir X productos seleccionados`** en 1 clic.
+* **Sincronización Masiva ERP ([`TiendaNubeSyncModal.jsx`](src/components/tiendanube/TiendaNubeSyncModal.jsx)):** Cruce inteligente en memoria de 9.100 filas de CSV contra variantes reales de Tiendanube y log en vivo.
 
 ### ⚡ 3. Módulo de Mercado Libre
 * **Panel de Analíticas:** Reputación oficial, tasa de reclamos, demoras y cobertura de Mercado Envíos Me2.

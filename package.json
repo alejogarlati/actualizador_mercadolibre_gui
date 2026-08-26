@@ -1,7 +1,7 @@
 {
   "name": "sync-meli-gui",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Actualizador Multicanal de Precios y Stock (Mercado Libre & Tiendanube) - Corralón Aconquija",
   "author": "Corralón Aconquija",
   "main": "electron/main.js",
