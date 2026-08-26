@@ -316,11 +316,15 @@ export default function App() {
 
   const handleSaveVariantOverride = async (variantId, data) => {
     try {
-      await saveTiendanubeVariantOverride(variantId, data);
-      addToast('success', 'Descuento de Variante Guardado', `Se actualizó la regla de descuento para la variante #${variantId}.`);
+      const res = await saveTiendanubeVariantOverride(variantId, data);
+      addToast(
+        'success',
+        res?.pushed_to_api ? 'Precio Actualizado en Tiendanube' : 'Descuento de Variante Guardado',
+        res?.message || `Se actualizó la regla de descuento para la variante #${variantId}.`
+      );
       await loadTiendanubeData();
     } catch (err) {
-      addToast('error', 'Error al guardar descuento', err.message);
+      addToast('error', 'Error al guardar descuento', err.response?.data?.detail || err.message);
     }
   };
 
