@@ -62,6 +62,11 @@ import {
   checkTiendanubeHealth,
   fetchTiendanubeMetrics,
   fetchTiendanubeItems,
+  fetchTiendanubeVariants,
+  saveTiendanubeVariantOverride,
+  fetchTiendanubeCategoriesTree,
+  saveTiendanubeCategoryDiscount,
+  fetchTiendanubeAudit,
   fetchTiendanubeItemDetail,
   refreshTiendanubeCatalog,
   createTiendanubeProduct,
@@ -75,6 +80,8 @@ import {
 import PlatformSelectorScreen from './components/common/PlatformSelectorScreen';
 import TiendaNubeDashboard from './components/tiendanube/TiendaNubeDashboard';
 import TiendaNubeCatalog from './components/tiendanube/TiendaNubeCatalog';
+import TiendaNubeCategoriesView from './components/tiendanube/TiendaNubeCategoriesView';
+import TiendaNubeAuditView from './components/tiendanube/TiendaNubeAuditView';
 import TiendaNubeProductModal from './components/tiendanube/TiendaNubeProductModal';
 import TiendaNubeSyncModal from './components/tiendanube/TiendaNubeSyncModal';
 
@@ -88,7 +95,11 @@ export default function App() {
   const [tnHealth, setTnHealth] = useState({ status: 'checking', configured: false });
   const [tnMetrics, setTnMetrics] = useState(null);
   const [tnItems, setTnItems] = useState([]);
+  const [tnVariants, setTnVariants] = useState([]);
   const [tnCategories, setTnCategories] = useState([]);
+  const [tnCategoriesTree, setTnCategoriesTree] = useState([]);
+  const [tnAuditReport, setTnAuditReport] = useState(null);
+  const [tnTolerancePct, setTnTolerancePct] = useState(2.0);
   const [tnLoading, setTnLoading] = useState(false);
   const [tnProductModalOpen, setTnProductModalOpen] = useState(false);
   const [tnEditingProduct, setTnEditingProduct] = useState(null);
@@ -278,20 +289,66 @@ export default function App() {
   const loadTiendanubeData = async () => {
     setTnLoading(true);
     try {
-      const [h, m, itms, cats] = await Promise.all([
+      const [h, m, itms, varsList, tree, cats, audit] = await Promise.all([
         checkTiendanubeHealth(),
         fetchTiendanubeMetrics(),
         fetchTiendanubeItems(),
-        fetchTiendanubeCategories()
+        fetchTiendanubeVariants(),
+        fetchTiendanubeCategoriesTree(),
+        fetchTiendanubeCategories(),
+        fetchTiendanubeAudit(tnTolerancePct)
       ]);
       setTnHealth(h);
       setTnMetrics(m);
       setTnItems(itms);
+      setTnVariants(varsList);
+      setTnCategoriesTree(tree);
       setTnCategories(cats);
+      setTnAuditReport(audit);
     } catch (err) {
       console.error('Error al cargar datos de Tiendanube:', err);
     } finally {
       setTnLoading(false);
+    }
+  };
+
+  const handleSaveVariantOverride = async (variantId, data) => {
+    try {
+      await saveTiendanubeVariantOverride(variantId, data);
+      addToast('success', 'Descuento de Variante Guardado', `Se actualizó la regla de descuento para la variante #${variantId}.`);
+      await loadTiendanubeData();
+    } catch (err) {
+      addToast('error', 'Error al guardar descuento', err.message);
+    }
+  };
+
+  const handleSaveCategoryDiscount = async (categoryId, discountPct) => {
+    try {
+      await saveTiendanubeCategoryDiscount(categoryId, discountPct);
+      addToast('success', 'Regla de Categoría Actualizada', `El descuento de la categoría #${categoryId} se actualizó a ${discountPct}%.`);
+      await loadTiendanubeData();
+    } catch (err) {
+      addToast('error', 'Error al guardar categoría', err.message);
+    }
+  };
+
+  const handleFixVariantPrice = async (productId, variantId, expectedPrice) => {
+    try {
+      await updateTiendanubeVariant(productId, variantId, { price: `${expectedPrice}` });
+      addToast('success', 'Precio Corregido en Tiendanube', `La variante fue actualizada al precio esperado: $${expectedPrice.toLocaleString('es-AR')}.`);
+      await loadTiendanubeData();
+    } catch (err) {
+      addToast('error', 'Error al corregir precio', err.message);
+    }
+  };
+
+  const handleToleranceChange = async (newTolerance) => {
+    setTnTolerancePct(newTolerance);
+    try {
+      const audit = await fetchTiendanubeAudit(newTolerance);
+      setTnAuditReport(audit);
+    } catch (err) {
+      console.error('Error al re-auditar Tiendanube:', err);
     }
   };
 
@@ -757,7 +814,7 @@ export default function App() {
                   }`}
                   onClick={() => setActiveTab('dashboard')}
                 >
-                  <LayoutDashboard className="w-4 h-4" /> Dashboard Tiendanube
+                  <LayoutDashboard className="w-4 h-4" /> Dashboard
                 </button>
 
                 <button 
@@ -766,7 +823,25 @@ export default function App() {
                   }`}
                   onClick={() => setActiveTab('items')}
                 >
-                  <PackageSearch className="w-4 h-4" /> Catálogo & Variantes
+                  <Layers className="w-4 h-4" /> Catálogo de Variantes
+                </button>
+
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'categories' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('categories')}
+                >
+                  <Percent className="w-4 h-4" /> Descuentos por Categoría
+                </button>
+
+                <button 
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+                    activeTab === 'audit' ? 'bg-red-600 text-white shadow-md shadow-red-100 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('audit')}
+                >
+                  <ShieldCheck className="w-4 h-4" /> Auditoría de Precios
                 </button>
 
                 <button 
@@ -881,7 +956,9 @@ export default function App() {
           <div>
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
               {selectedPlatform === 'tiendanube' ? (
-                activeTab === 'items' ? 'Catálogo de Productos Tiendanube' :
+                activeTab === 'items' ? 'Catálogo de Variantes Tiendanube' :
+                activeTab === 'categories' ? 'Reglas de Descuento por Categoría & Sub-Categoría' :
+                activeTab === 'audit' ? 'Auditoría de Precios ERP vs Tiendanube' :
                 activeTab === 'sync' ? 'Sincronizador Masivo Tiendanube' :
                 'Panel Tiendanube • Corralón Aconquija'
               ) : (
@@ -895,7 +972,7 @@ export default function App() {
             </h2>
             <p className="text-xs text-slate-500 mt-1">
               {selectedPlatform === 'tiendanube'
-                ? 'Gestión directa de catálogo, matriz de variantes y sincronización masiva con Nuvemshop'
+                ? 'Gestión independiente de variantes, matriz de atributos y sincronización de precios ERP con Nuvemshop'
                 : 'Gestión automatizada de precios, márgenes y analíticas para Mercado Libre'}
             </p>
           </div>
@@ -978,7 +1055,7 @@ export default function App() {
 
             {activeTab === 'items' && (
               <TiendaNubeCatalog
-                items={tnItems}
+                variants={tnVariants}
                 categories={tnCategories}
                 loading={tnLoading}
                 onRefresh={handleRefreshTiendanubeCatalog}
@@ -993,6 +1070,27 @@ export default function App() {
                 }}
                 onDelete={handleDeleteTiendanubeProduct}
                 onQuickUpdate={handleQuickUpdateTiendanube}
+                onSaveVariantOverride={handleSaveVariantOverride}
+              />
+            )}
+
+            {activeTab === 'categories' && (
+              <TiendaNubeCategoriesView
+                categoriesTree={tnCategoriesTree}
+                loading={tnLoading}
+                onRefresh={loadTiendanubeData}
+                onSaveCategoryDiscount={handleSaveCategoryDiscount}
+              />
+            )}
+
+            {activeTab === 'audit' && (
+              <TiendaNubeAuditView
+                auditReport={tnAuditReport}
+                loading={tnLoading}
+                onRefresh={loadTiendanubeData}
+                onFixPrice={handleFixVariantPrice}
+                tolerancePct={tnTolerancePct}
+                onToleranceChange={handleToleranceChange}
               />
             )}
 

@@ -209,6 +209,50 @@ export const fetchTiendanubeCategories = async () => {
   }
 };
 
+export const fetchTiendanubeVariants = async (search = '', categoryId = null, limit = null, offset = 0) => {
+  try {
+    const params = {};
+    if (limit !== null && limit !== undefined) params.limit = limit;
+    if (offset) params.offset = offset;
+    if (search) params.search = search;
+    if (categoryId) params.category_id = categoryId;
+    const res = await axios.get(`${API_BASE_URL}/tiendanube/variants`, { params });
+    return res.data.variants || [];
+  } catch (err) {
+    return [];
+  }
+};
+
+export const saveTiendanubeVariantOverride = async (variantId, data) => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/variants/${variantId}/override`, data);
+  return res.data;
+};
+
+export const fetchTiendanubeCategoriesTree = async () => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/tiendanube/categories/tree`);
+    return res.data || [];
+  } catch (err) {
+    return [];
+  }
+};
+
+export const saveTiendanubeCategoryDiscount = async (categoryId, discountPct) => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/categories/${categoryId}/discount`, {
+    discount_pct: discountPct
+  });
+  return res.data;
+};
+
+export const fetchTiendanubeAudit = async (tolerancePct = 2.0) => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/tiendanube/audit?tolerance_pct=${tolerancePct}`);
+    return res.data;
+  } catch (err) {
+    return { tolerance_pct: tolerancePct, total_variants: 0, count_ok: 0, count_diff: 0, count_no_erp: 0, items: [] };
+  }
+};
+
 export const executeTiendanubeSync = async (params = {}) => {
   const res = await axios.post(`${API_BASE_URL}/tiendanube/sync/execute`, params);
   return res.data;
@@ -231,6 +275,7 @@ export const fetchTiendanubeSyncHistory = async (limit = 50) => {
     return [];
   }
 };
+
 
 
 

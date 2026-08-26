@@ -6,49 +6,50 @@ import {
   Plus, 
   Edit3, 
   Trash2, 
-  ChevronDown, 
-  ChevronRight, 
   ChevronLeft,
+  ChevronRight, 
   ChevronsLeft,
   ChevronsRight,
   Tag, 
-  ExternalLink, 
   Package, 
   CheckCircle2, 
   AlertCircle,
   AlertTriangle,
   Sliders,
-  DollarSign
+  Percent,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 
 export default function TiendaNubeCatalog({ 
-  items = [], 
+  variants = [], 
   categories = [], 
   loading = false, 
   onRefresh, 
   onOpenCreate, 
   onOpenEdit, 
   onDelete,
-  onQuickUpdate 
+  onQuickUpdate,
+  onSaveVariantOverride 
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [expandedRows, setExpandedRows] = useState({});
+  const [discountFilter, setDiscountFilter] = useState('all'); // 'all', 'custom', 'category'
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25); // 15, 25, 50, 100, 'all'
 
-  // Quick edit state
+  // Quick edit state (precio y stock)
   const [quickEditItem, setQuickEditItem] = useState(null);
   const [quickPrice, setQuickPrice] = useState('');
   const [quickPromoPrice, setQuickPromoPrice] = useState('');
   const [quickStock, setQuickStock] = useState('');
 
-  const toggleRow = (id) => {
-    setExpandedRows(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  // Variant discount override modal state
+  const [overrideItem, setOverrideItem] = useState(null);
+  const [overridePct, setOverridePct] = useState('');
 
   const openQuickEdit = (item) => {
     setQuickEditItem(item);
@@ -59,7 +60,8 @@ export default function TiendaNubeCatalog({
 
   const handleSaveQuickEdit = () => {
     if (!quickEditItem) return;
-    onQuickUpdate(quickEditItem.id, {
+    onQuickUpdate(quickEditItem.product_id, {
+      variant_id: quickEditItem.variant_id,
       price: quickPrice ? parseFloat(quickPrice) : undefined,
       promotional_price: quickPromoPrice ? parseFloat(quickPromoPrice) : null,
       stock: quickStock !== '' ? parseInt(quickStock) : undefined
@@ -67,15 +69,32 @@ export default function TiendaNubeCatalog({
     setQuickEditItem(null);
   };
 
-  // Filtrado de items
-  const filteredItems = useMemo(() => {
-    return (items || []).filter(item => {
+  const openOverrideModal = (item) => {
+    setOverrideItem(item);
+    setOverridePct(item.custom_discount_pct !== null && item.custom_discount_pct !== undefined ? item.custom_discount_pct : '');
+  };
+
+  const handleSaveOverride = () => {
+    if (!overrideItem) return;
+    const val = overridePct !== '' ? parseFloat(overridePct) : null;
+    onSaveVariantOverride(overrideItem.variant_id, {
+      product_id: overrideItem.product_id,
+      sku: overrideItem.sku,
+      custom_discount_pct: val
+    });
+    setOverrideItem(null);
+  };
+
+  // Filtrado de variantes
+  const filteredVariants = useMemo(() => {
+    return (variants || []).filter(item => {
       const matchSearch = 
-        item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.display_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(item.id).includes(searchTerm) ||
-        (item.variants && item.variants.some(v => v.sku?.toLowerCase().includes(searchTerm.toLowerCase())));
+        String(item.product_id).includes(searchTerm) ||
+        String(item.variant_id).includes(searchTerm);
 
       const matchStatus = 
         statusFilter === 'all' || 
@@ -86,34 +105,33 @@ export default function TiendaNubeCatalog({
         categoryFilter === 'all' || 
         String(item.category_id) === String(categoryFilter);
 
-      return matchSearch && matchStatus && matchCat;
-    });
-  }, [items, searchTerm, statusFilter, categoryFilter]);
+      const matchDiscount = 
+        discountFilter === 'all' ||
+        (discountFilter === 'custom' && item.discount_origin === 'custom') ||
+        (discountFilter === 'category' && item.discount_origin === 'category');
 
-  // Total de variantes de los items filtrados
-  const totalVariantsCount = useMemo(() => {
-    return filteredItems.reduce((acc, curr) => acc + (curr.variants?.length || 1), 0);
-  }, [filteredItems]);
+      return matchSearch && matchStatus && matchCat && matchDiscount;
+    });
+  }, [variants, searchTerm, statusFilter, categoryFilter, discountFilter]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, categoryFilter, pageSize]);
+  }, [searchTerm, statusFilter, categoryFilter, discountFilter, pageSize]);
 
   // Cálculos de Paginación
-  const effectivePageSize = pageSize === 'all' ? filteredItems.length || 1 : pageSize;
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / effectivePageSize));
+  const effectivePageSize = pageSize === 'all' ? filteredVariants.length || 1 : pageSize;
+  const totalPages = Math.max(1, Math.ceil(filteredVariants.length / effectivePageSize));
   
-  const paginatedItems = useMemo(() => {
-    if (pageSize === 'all') return filteredItems;
+  const paginatedVariants = useMemo(() => {
+    if (pageSize === 'all') return filteredVariants;
     const start = (currentPage - 1) * pageSize;
-    return filteredItems.slice(start, start + pageSize);
-  }, [filteredItems, currentPage, pageSize]);
+    return filteredVariants.slice(start, start + pageSize);
+  }, [filteredVariants, currentPage, pageSize]);
 
-  const startIdx = filteredItems.length === 0 ? 0 : (currentPage - 1) * effectivePageSize + 1;
-  const endIdx = pageSize === 'all' ? filteredItems.length : Math.min(currentPage * pageSize, filteredItems.length);
+  const startIdx = filteredVariants.length === 0 ? 0 : (currentPage - 1) * effectivePageSize + 1;
+  const endIdx = pageSize === 'all' ? filteredVariants.length : Math.min(currentPage * pageSize, filteredVariants.length);
 
-  // Helper para generar números de página con ventana inteligente
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
@@ -141,25 +159,11 @@ export default function TiendaNubeCatalog({
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Buscar por nombre, SKU padre/variante, marca o ID..."
+              placeholder="Buscar variante por SKU, nombre, medida, marca o ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-50 text-slate-900 text-xs pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 focus:bg-white transition-colors"
             />
-          </div>
-
-          {/* Filtro por Estado */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="active">Activos / Publicados</option>
-              <option value="hidden">Ocultos / Pausados</option>
-            </select>
           </div>
 
           {/* Filtro por Categoría */}
@@ -175,6 +179,34 @@ export default function TiendaNubeCatalog({
               ))}
             </select>
           )}
+
+          {/* Filtro por Tipo de Descuento */}
+          <div className="flex items-center gap-1.5">
+            <Percent className="w-3.5 h-3.5 text-slate-400" />
+            <select
+              value={discountFilter}
+              onChange={(e) => setDiscountFilter(e.target.value)}
+              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500"
+            >
+              <option value="all">Todos los factores</option>
+              <option value="custom">🎯 Descuento Personalizado (Variante)</option>
+              <option value="category">📁 Descuento por Categoría</option>
+            </select>
+          </div>
+
+          {/* Filtro por Estado */}
+          <div className="flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="active">Activos</option>
+              <option value="hidden">Ocultos</option>
+            </select>
+          </div>
         </div>
 
         {/* Botones de Acción */}
@@ -202,11 +234,7 @@ export default function TiendaNubeCatalog({
       {/* Indicador de Resumen de Catálogo */}
       <div className="flex items-center justify-between text-xs text-slate-500 px-1">
         <div className="flex items-center gap-2">
-          <span>Mostrando <strong className="text-slate-800">{startIdx} - {endIdx}</strong> de <strong className="text-slate-800">{filteredItems.length}</strong> productos</span>
-          <span className="text-slate-300">•</span>
-          <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-mono text-[11px] font-semibold">
-            {totalVariantsCount} variantes / SKUs totales
-          </span>
+          <span>Mostrando <strong className="text-slate-800">{startIdx} - {endIdx}</strong> de <strong className="text-slate-800">{filteredVariants.length}</strong> variantes independientes</span>
         </div>
 
         {/* Selector de cantidad por página rápido */}
@@ -221,246 +249,213 @@ export default function TiendaNubeCatalog({
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
-            <option value="all">Todos ({filteredItems.length})</option>
+            <option value="all">Todos ({filteredVariants.length})</option>
           </select>
         </div>
       </div>
 
-      {/* Tabla de Catálogo */}
+      {/* TABLA DE VARIANTES INDEPENDIENTES */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3.5 px-4 w-10 text-center">#</th>
-                <th className="py-3.5 px-4">Producto & Marca</th>
-                <th className="py-3.5 px-4">SKU Padre</th>
-                <th className="py-3.5 px-4 text-right">Precio Lista</th>
-                <th className="py-3.5 px-4 text-right">Oferta</th>
-                <th className="py-3.5 px-4 text-right">Costo ERP</th>
+                <th className="py-3.5 px-4">Producto & Atributos de Variante</th>
+                <th className="py-3.5 px-4">SKU ERP</th>
+                <th className="py-3.5 px-4">Categoría / Sub-Cat</th>
+                <th className="py-3.5 px-4 text-right">Costo Mostrador</th>
+                <th className="py-3.5 px-4 text-center">Factor / Descuento</th>
+                <th className="py-3.5 px-4 text-right">Precio Tienda</th>
                 <th className="py-3.5 px-4 text-center">Stock</th>
                 <th className="py-3.5 px-4 text-center">Estado</th>
                 <th className="py-3.5 px-4 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">
-              {loading && items.length === 0 ? (
+              {loading && variants.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="py-16 text-center text-slate-500">
+                  <td colSpan="10" className="py-16 text-center text-slate-500">
                     <RefreshCw className="w-7 h-7 animate-spin mx-auto mb-2 text-red-600" />
-                    <span className="font-semibold">Cargando catálogo completo de Tiendanube...</span>
+                    <span className="font-semibold">Cargando variantes de Tiendanube...</span>
                   </td>
                 </tr>
-              ) : paginatedItems.length === 0 ? (
+              ) : paginatedVariants.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="py-16 text-center text-slate-500">
+                  <td colSpan="10" className="py-16 text-center text-slate-500">
                     <Package className="w-10 h-10 mx-auto mb-2 text-slate-400" />
-                    <p className="text-sm font-bold text-slate-700">No se encontraron productos</p>
+                    <p className="text-sm font-bold text-slate-700">No se encontraron variantes</p>
                     <p className="text-xs text-slate-400 mt-1">Prueba refrescar desde la API o modificar los filtros de búsqueda.</p>
                   </td>
                 </tr>
               ) : (
-                paginatedItems.map((item, idx) => {
-                  const hasVariants = item.variants && item.variants.length > 0;
-                  const isExpanded = expandedRows[item.id];
+                paginatedVariants.map((item, idx) => {
                   const hasPromo = item.promotional_price && item.promotional_price > 0;
                   const rowNumber = startIdx + idx;
+                  const isCustom = item.discount_origin === 'custom';
 
                   return (
-                    <React.Fragment key={item.id}>
-                      <tr className="hover:bg-slate-50/80 transition-colors">
-                        {/* Expand Icon / Number */}
-                        <td className="py-3 px-4 text-center">
-                          {hasVariants ? (
-                            <button
-                              onClick={() => toggleRow(item.id)}
-                              className="p-1 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors"
-                              title={isExpanded ? 'Contraer variantes' : `Expandir ${item.variants.length} variantes`}
-                            >
-                              {isExpanded ? <ChevronDown className="w-4 h-4 text-red-600" /> : <ChevronRight className="w-4 h-4" />}
-                            </button>
-                          ) : (
-                            <span className="text-slate-400 font-mono text-[10px]">{rowNumber}</span>
-                          )}
-                        </td>
+                    <tr key={`${item.product_id}-${item.variant_id}`} className="hover:bg-slate-50/80 transition-colors">
+                      {/* Número de fila */}
+                      <td className="py-3 px-4 text-center text-slate-400 font-mono text-[10px]">
+                        {rowNumber}
+                      </td>
 
-                        {/* Thumbnail & Title */}
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            {item.thumbnail ? (
-                              <img
-                                src={item.thumbnail}
-                                alt={item.name}
-                                className="w-10 h-10 object-cover rounded-xl border border-slate-200 bg-slate-50 shrink-0"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
-                                <Package className="w-4 h-4" />
-                              </div>
-                            )}
-                            <div className="max-w-md">
-                              <div className="font-semibold text-slate-900 flex items-center gap-2 flex-wrap">
-                                <span>{item.name}</span>
-                                {item.free_shipping && (
-                                  <span className="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.2 rounded border border-emerald-200 font-medium">
-                                    Envío Gratis
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
-                                <span className="font-mono text-slate-400">ID #{item.id}</span>
-                                {item.brand && <span>• <strong className="text-slate-700">{item.brand}</strong></span>}
-                                {item.category_name && <span>• {item.category_name}</span>}
-                                {hasVariants && (
-                                  <span className="text-red-600 font-semibold">
-                                    ({item.variants.length} {item.variants.length === 1 ? 'variante' : 'variantes'})
-                                  </span>
-                                )}
-                              </div>
+                      {/* Thumbnail, Título y Variante */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          {item.thumbnail ? (
+                            <img
+                              src={item.thumbnail}
+                              alt={item.product_name}
+                              className="w-10 h-10 object-cover rounded-xl border border-slate-200 bg-slate-50 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 shrink-0">
+                              <Package className="w-4 h-4" />
+                            </div>
+                          )}
+                          <div className="max-w-md">
+                            <div className="font-semibold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                              <span>{item.product_name}</span>
+                              {item.variant_str && (
+                                <span className="bg-red-50 text-red-700 text-[11px] font-bold px-2 py-0.5 rounded-lg border border-red-200">
+                                  {item.variant_str}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5 flex-wrap">
+                              <span className="font-mono text-slate-400">Var #{item.variant_id}</span>
+                              {item.brand && <span>• <strong className="text-slate-700">{item.brand}</strong></span>}
+                              {item.free_shipping && (
+                                <span className="bg-emerald-50 text-emerald-700 text-[10px] px-1.5 py-0.2 rounded border border-emerald-200 font-medium">
+                                  Envío Gratis
+                                </span>
+                              )}
                             </div>
                           </div>
-                        </td>
+                        </div>
+                      </td>
 
-                        {/* SKU Padre */}
-                        <td className="py-3 px-4 font-mono font-medium text-slate-700">
-                          {item.sku || <span className="text-slate-400 italic">Sin SKU</span>}
-                        </td>
-
-                        {/* Precio Regular */}
-                        <td className={`py-3 px-4 text-right font-mono font-semibold ${hasPromo ? 'line-through text-slate-400 text-[11px]' : 'text-slate-900'}`}>
-                          ${(item.price || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                        </td>
-
-                        {/* Precio Promocional */}
-                        <td className="py-3 px-4 text-right font-mono font-bold text-emerald-600">
-                          {hasPromo ? `$${item.promotional_price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : '-'}
-                        </td>
-
-                        {/* Costo ERP */}
-                        <td className="py-3 px-4 text-right font-mono text-slate-500">
-                          {item.cost ? `$${item.cost.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : '-'}
-                        </td>
-
-                        {/* Stock */}
-                        <td className="py-3 px-4 text-center">
-                          {item.stock !== null && item.stock !== undefined ? (
-                            item.stock > 0 ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                {item.stock} u.
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-red-50 text-red-700 border border-red-200">
-                                Agotado
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-slate-400 text-[11px]">Ilimitado</span>
-                          )}
-                        </td>
-
-                        {/* Estado */}
-                        <td className="py-3 px-4 text-center">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
-                            item.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-                            {item.status === 'active' ? 'Publicado' : 'Oculto'}
+                      {/* SKU ERP */}
+                      <td className="py-3 px-4 font-mono font-medium text-slate-700">
+                        {item.sku ? (
+                          <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md font-semibold text-[11px]">
+                            {item.sku}
                           </span>
-                        </td>
+                        ) : (
+                          <span className="text-slate-400 italic">Sin SKU</span>
+                        )}
+                      </td>
 
-                        {/* Acciones */}
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <button
-                              onClick={() => openQuickEdit(item)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                              title="Ajuste rápido de precio y stock"
-                            >
-                              <Sliders className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => onOpenEdit(item.id)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
-                              title="Editar ficha completa y variantes"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => onDelete(item.id)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                              title="Eliminar producto"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                      {/* Categoría / Subcategoría */}
+                      <td className="py-3 px-4 text-slate-600 max-w-[180px] truncate" title={item.category_name}>
+                        <span className="bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg text-[11px] font-medium text-slate-700">
+                          {item.category_name}
+                        </span>
+                      </td>
+
+                      {/* Costo Mostrador ERP */}
+                      <td className="py-3 px-4 text-right font-mono text-slate-600 font-medium">
+                        {item.cost ? `$${item.cost.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : (
+                          <span className="text-slate-400 italic">Sin ERP</span>
+                        )}
+                      </td>
+
+                      {/* Factor / Descuento Aplicado */}
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => openOverrideModal(item)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-[11px] font-bold border transition-all cursor-pointer ${
+                            isCustom
+                              ? 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100 shadow-2xs'
+                              : item.applied_discount_pct !== 0
+                              ? 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                              : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                          }`}
+                          title="Haz clic para sobreescribir el descuento de esta variante"
+                        >
+                          <span>{item.applied_discount_pct > 0 ? `-${item.applied_discount_pct}%` : `${item.applied_discount_pct}%`}</span>
+                          <span className="text-[9px] uppercase tracking-wide opacity-80">
+                            ({isCustom ? 'Manual' : 'Cat'})
+                          </span>
+                          <Edit3 className="w-3 h-3 text-slate-400 hover:text-slate-600" />
+                        </button>
+                      </td>
+
+                      {/* Precio Publicado en Tienda */}
+                      <td className="py-3 px-4 text-right font-mono">
+                        <div className={`font-semibold ${hasPromo ? 'line-through text-slate-400 text-[10px]' : 'text-slate-900'}`}>
+                          ${(item.price || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
+                        </div>
+                        {hasPromo && (
+                          <div className="font-bold text-emerald-600">
+                            ${item.promotional_price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
                           </div>
-                        </td>
-                      </tr>
+                        )}
+                      </td>
 
-                      {/* Acordeón de Variantes Hijas */}
-                      {isExpanded && hasVariants && (
-                        <tr className="bg-slate-50/70 border-b border-slate-200">
-                          <td colSpan="9" className="py-3.5 px-8">
-                            <div className="border-l-2 border-red-600 pl-4 py-1 space-y-2">
-                              <div className="text-[11px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1.5">
-                                <Tag className="w-3.5 h-3.5" />
-                                <span>Variantes del Producto (#{item.id}) - {item.variants.length} configuradas</span>
-                              </div>
-                              <div className="grid grid-cols-1 gap-2">
-                                {item.variants.map((v, vIdx) => {
-                                  const valuesStr = (v.values || []).map(val => val.es || Object.values(val)[0]).join(' / ');
-                                  return (
-                                    <div key={v.id || vIdx} className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-slate-200 shadow-2xs text-xs">
-                                      <div className="flex items-center gap-3">
-                                        <span className="font-bold text-slate-900">
-                                          {valuesStr || `Variante #${vIdx + 1}`}
-                                        </span>
-                                        {v.sku && (
-                                          <span className="text-[11px] text-slate-500 font-mono">
-                                            SKU: <span className="text-slate-800 font-medium">{v.sku}</span>
-                                          </span>
-                                        )}
-                                        {v.barcode && (
-                                          <span className="text-[10px] text-slate-400 font-mono">
-                                            EAN: {v.barcode}
-                                          </span>
-                                        )}
-                                      </div>
+                      {/* Stock */}
+                      <td className="py-3 px-4 text-center">
+                        {item.stock !== null && item.stock !== undefined ? (
+                          item.stock > 0 ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {item.stock} u.
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-red-50 text-red-700 border border-red-200">
+                              Agotado
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-slate-400 text-[11px]">Ilimitado</span>
+                        )}
+                      </td>
 
-                                      <div className="flex items-center gap-5 font-mono">
-                                        <div className="text-right">
-                                          <span className={`text-xs ${v.promotional_price ? 'line-through text-slate-400' : 'text-slate-900 font-bold'}`}>
-                                            ${parseFloat(v.price || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                                          </span>
-                                          {v.promotional_price && (
-                                            <span className="text-xs text-emerald-600 font-black ml-2">
-                                              ${parseFloat(v.promotional_price).toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                                            </span>
-                                          )}
-                                        </div>
+                      {/* Estado */}
+                      <td className="py-3 px-4 text-center">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
+                          item.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-600 border-slate-200'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${item.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                          {item.status === 'active' ? 'Publicado' : 'Oculto'}
+                        </span>
+                      </td>
 
-                                        <div className="text-right">
-                                          {v.stock !== null && v.stock !== undefined ? (
-                                            <span className={`text-xs px-2.5 py-0.5 rounded-md font-semibold border ${
-                                              v.stock > 0 
-                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                                                : 'bg-red-50 text-red-700 border-red-200'
-                                            }`}>
-                                              {v.stock} u.
-                                            </span>
-                                          ) : (
-                                            <span className="text-slate-400 text-xs">Ilimitado</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
+                      {/* Acciones */}
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openOverrideModal(item)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-700 hover:bg-amber-50 transition-colors"
+                            title="Sobreescribir factor de descuento para esta variante"
+                          >
+                            <Percent className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openQuickEdit(item)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            title="Ajuste rápido de precio y stock de la variante"
+                          >
+                            <Sliders className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => onOpenEdit(item.product_id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                            title="Editar ficha completa del producto padre"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(item.product_id)}
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            title="Eliminar producto completo de Tiendanube"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })
               )}
@@ -469,10 +464,10 @@ export default function TiendaNubeCatalog({
         </div>
 
         {/* Barra de Paginación Inferior */}
-        {filteredItems.length > 0 && (
+        {filteredVariants.length > 0 && (
           <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
             <div className="text-slate-500 font-medium">
-              Página <strong className="text-slate-800">{currentPage}</strong> de <strong className="text-slate-800">{totalPages}</strong> ({filteredItems.length} productos totales)
+              Página <strong className="text-slate-800">{currentPage}</strong> de <strong className="text-slate-800">{totalPages}</strong> ({filteredVariants.length} variantes individuales)
             </div>
 
             {/* Controles de Navegación de Páginas */}
@@ -534,13 +529,89 @@ export default function TiendaNubeCatalog({
         )}
       </div>
 
-      {/* Modal de Ajuste Rápido */}
+      {/* Modal de Sobreescritura de Descuento por Variante */}
+      {overrideItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+            <div>
+              <div className="flex items-center gap-2 text-red-600 font-bold text-xs uppercase tracking-wider mb-1">
+                <Percent className="w-4 h-4" />
+                <span>Descuento Discrecional por Variante</span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900">{overrideItem.display_title}</h3>
+              <p className="text-xs text-slate-500 font-mono mt-0.5">SKU: {overrideItem.sku || 'Sin SKU'}</p>
+            </div>
+
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1.5 text-slate-600">
+              <div className="flex justify-between">
+                <span>Categoría asignada:</span>
+                <strong className="text-slate-800">{overrideItem.category_name}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Descuento base de la Categoría:</span>
+                <strong className="text-slate-800">{overrideItem.category_discount_pct}%</strong>
+              </div>
+              <div className="flex justify-between">
+                <span>Costo mostrador ERP:</span>
+                <strong className="text-slate-800 font-mono">${overrideItem.cost ? overrideItem.cost.toLocaleString('es-AR') : 'N/A'}</strong>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700">
+                Descuento personalizado para esta variante (%):
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.5"
+                  placeholder={`Por defecto usa el de categoría (${overrideItem.category_discount_pct}%)`}
+                  value={overridePct}
+                  onChange={(e) => setOverridePct(e.target.value)}
+                  className="w-full bg-slate-50 text-slate-900 font-mono font-bold text-sm px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none pr-8"
+                />
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">%</span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Dejalo vacío para restaurar el descuento heredado de la categoría ({overrideItem.category_discount_pct}%).
+              </p>
+            </div>
+
+            {/* Simulación en vivo */}
+            {overrideItem.cost && (
+              <div className="p-3 bg-red-50/70 border border-red-100 rounded-xl text-xs flex items-center justify-between">
+                <span className="text-red-950 font-medium">Nuevo precio estimado Tiendanube:</span>
+                <strong className="text-red-700 font-mono text-sm">
+                  ${(overrideItem.cost * (1 - ((overridePct !== '' ? parseFloat(overridePct) : overrideItem.category_discount_pct) / 100))).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </strong>
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setOverrideItem(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveOverride}
+                className="px-5 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200"
+              >
+                Guardar Descuento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Ajuste Rápido (Precio y Stock) */}
       {quickEditItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4">
           <div className="bg-white border border-slate-200 w-full max-w-sm rounded-2xl shadow-2xl p-6 space-y-4">
             <div>
-              <h3 className="text-base font-bold text-slate-900">Ajuste Rápido de Producto</h3>
-              <p className="text-xs text-slate-500 truncate mt-0.5">{quickEditItem.name}</p>
+              <h3 className="text-base font-bold text-slate-900">Ajuste Rápido de Variante</h3>
+              <p className="text-xs text-slate-500 truncate mt-0.5">{quickEditItem.display_title}</p>
             </div>
 
             <div className="space-y-3.5 text-xs">
