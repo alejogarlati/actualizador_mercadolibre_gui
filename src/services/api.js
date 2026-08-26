@@ -151,9 +151,11 @@ export const fetchTiendanubeMetrics = async () => {
   }
 };
 
-export const fetchTiendanubeItems = async (search = '', categoryId = null, limit = 100, offset = 0) => {
+export const fetchTiendanubeItems = async (search = '', categoryId = null, limit = null, offset = 0) => {
   try {
-    const params = { limit, offset };
+    const params = {};
+    if (limit !== null && limit !== undefined) params.limit = limit;
+    if (offset) params.offset = offset;
     if (search) params.search = search;
     if (categoryId) params.category_id = categoryId;
     const res = await axios.get(`${API_BASE_URL}/tiendanube/items`, { params });
