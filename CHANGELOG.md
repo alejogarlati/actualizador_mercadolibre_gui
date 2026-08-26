@@ -7,41 +7,35 @@ y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
-## [Unreleased] - Propuesto / Planificado
+## [0.3.0] - 2026-08-26
 
-### 🛍️ Interfaz de Usuario y Componentes para Tiendanube - *En Planificación*
-- **Conmutador de Plataforma Activa (MeLi ⚡ / Tiendanube 🛍️):**
-  - Selector visual en el header/barra de navegación para alternar de forma transparente entre el catálogo y operaciones de Mercado Libre y Tiendanube.
-  - Adaptación contextual de KPIs, métricas de inventario y acciones rápidas según la plataforma activa.
-- **Modal Integral de Alta y Edición de Productos Tiendanube:**
-  - Formulario estructurado para datos generales (nombre multilingüe, descripción HTML enriquecida, categorías, marca, visibilidad y envío gratis).
-  - Configuración de precios (precio regular, precio promocional de oferta tachado, costo mostrador ERP) e inventario (stock global/por depósito, SKU principal, código de barras, peso en kg y dimensiones físicas).
-  - Constructor dinámico de variantes: configuración de hasta 3 atributos por producto y matriz de variantes hijas con validación de consistencia entre atributos y combinaciones de valores (`values`).
-- **Listado de Catálogo y Monitoreo de Sincronización:**
-  - Tabla de productos Tiendanube con búsqueda por SKU/título, filtros por estado (`published`), badges de stock y acordeón interactivo para variaciones.
-  - Componente de sincronización masiva adaptado a Tiendanube: carga de CSV de mostrador ERP con drag-and-drop, barra de progreso en vivo conectada a `/tiendanube/sync/status` y resumen de auditoría.
-- **Feedback Visual de Rate Limiting y Resiliencia:**
-  - Banners y notificaciones flotantes (toasts) que informan al usuario cuando las peticiones se encuentran pausadas por control de tráfico (*Leaky Bucket* de Tiendanube con header `Retry-After`).
-  - Validación preventiva en cliente para evitar envíos con discordancia de atributos o precios con formato inválido.
-- **Requisitos de Calidad y Testing (Obligatorios para la futura implementación):**
-  - *Tests unitarios de frontend:* Cobertura de servicios en `src/services/api.js`, formateadores y renderizado de componentes clave (modal de producto, matriz de variantes y conmutador de canal).
-  - *Tests de impacto / no regresión:* Comprobación de que la interfaz de Mercado Libre no sufre roturas ni efectos colaterales al alternar de plataforma.
+### 🛍️ Experiencia de Usuario Multicanal (Mercado Libre + Tiendanube)
+- **🌐 Conmutador de Plataforma Activa (`src/components/common/PlatformSwitcher.jsx`):**
+  - Selector visual en el encabezado principal que permite alternar fluidamente entre los espacios de trabajo de **Mercado Libre** ⚡ y **Tiendanube** 🛍️.
+  - Adaptación contextual en vivo de títulos, subtítulos, badges de estado de conexión y acciones de reconexión.
+- **📊 Panel de Control y KPIs de Tiendanube (`src/components/tiendanube/TiendaNubeDashboard.jsx`):**
+  - Banner interactivo con ID de tienda (#8145042) y estado de conexión REST v1.
+  - Tarjetas KPI: Total de productos sincronizados en SQLite, productos activos/publicados, productos sin stock (alerta) y valuación total del inventario.
+  - Accesos directos a sincronización masiva ERP, creación de productos y explorador de catálogo.
+- **📦 Explorador de Catálogo y Variantes (`src/components/tiendanube/TiendaNubeCatalog.jsx`):**
+  - Tabla de artículos con thumbnails, marca, SKU, precio de lista, precio de oferta tachado, costo ERP y stock.
+  - Búsqueda en tiempo real por nombre, SKU, marca o ID numérico.
+  - Filtros combinados por estado (`Publicados` / `Ocultos`) y por categoría de tienda.
+  - Acordeón interactivo para desplegar variantes hijas con sus atributos, SKU y stock específico.
+  - Modal de ajuste rápido para editar precios y existencias en 1 clic.
+- **🛠️ Modal Integral de Creación y Edición (`src/components/tiendanube/TiendaNubeProductModal.jsx`):**
+  - Pestañas de Datos Generales (título `es`, descripción, marca, tags, categoría, envío gratis y visibilidad).
+  - Constructor dinámico de atributos (hasta 3 atributos) y matriz de variantes hijas con validación de concordancia.
+- **⚡ Módulo de Sincronización Masiva ERP (`src/components/tiendanube/TiendaNubeSyncModal.jsx`):**
+  - Selector de archivo CSV y slider interactivo de margen comercial (+0% a +100%).
+  - Barra de progreso en vivo conectada a `/tiendanube/sync/status` con contador de actualizados, no encontrados y errores.
+  - Consola de logs de auditoría en tiempo real con coloreado semántico.
+- **📡 Capa de Servicios API (`src/services/api.js`):**
+  - Implementación completa de métodos para todos los endpoints de Tiendanube.
 
 ---
 
 ## 🗺️ Roadmap de Próximas Versiones (Frontend)
-
-### [v0.3.0] - *Experiencia Multicanal (Mercado Libre + Tiendanube) - [EN DESARROLLO / PRÓXIMO HITO]*
-> **Nota de Repriorización:** Se adelantó el hito de interfaz multicanal a la versión `v0.3.0` para acompañar el soporte backend de Tiendanube y permitir la gestión y sincronización de catálogo de ambos canales desde la app de escritorio, postergando el login RBAC a la `v0.4.0`.
-
-- **🌐 Conmutador de Plataforma Activa:**
-  - Selector visual en el header de navegación para alternar fluidamente entre los catálogos y métricas de **Mercado Libre** o **Tiendanube**.
-- **🛍️ Vistas y Componentes para Tiendanube:**
-  - Tabla y vista de catálogo para Tiendanube (precios, control de stock, variantes y promociones activas).
-  - Modal integral de alta/edición de producto con constructor dinámico de variantes (hasta 3 atributos).
-  - Módulo de sincronización masiva adaptado a Tiendanube con feedback de rate limit (*Leaky Bucket*).
-
----
 
 ### [v0.4.0] - *Autenticación, Vistas por Rol y Seguridad (Offline RBAC)*
 - **👥 Pantalla de Inicio de Sesión (Login View):**

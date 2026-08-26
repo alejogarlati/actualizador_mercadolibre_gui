@@ -129,4 +129,106 @@ export const fetchLogs = async (lines = 30) => {
   }
 };
 
+// =============================================================================
+// SERVICIOS TIENDANUBE (NUVEMSHOP)
+// =============================================================================
+
+export const checkTiendanubeHealth = async () => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/tiendanube/health`);
+    return res.data;
+  } catch (err) {
+    return { status: 'offline', configured: false, detail: err.message };
+  }
+};
+
+export const fetchTiendanubeMetrics = async () => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/tiendanube/metrics`);
+    return res.data;
+  } catch (err) {
+    return { total_products: 0, active_products: 0, out_of_stock: 0, total_valuation: 0 };
+  }
+};
+
+export const fetchTiendanubeItems = async (search = '', categoryId = null, limit = 100, offset = 0) => {
+  try {
+    const params = { limit, offset };
+    if (search) params.search = search;
+    if (categoryId) params.category_id = categoryId;
+    const res = await axios.get(`${API_BASE_URL}/tiendanube/items`, { params });
+    return res.data.items || [];
+  } catch (err) {
+    return [];
+  }
+};
+
+export const fetchTiendanubeItemDetail = async (productId) => {
+  const res = await axios.get(`${API_BASE_URL}/tiendanube/items/${productId}`);
+  return res.data;
+};
+
+export const refreshTiendanubeCatalog = async () => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/items/refresh`);
+  return res.data;
+};
+
+export const createTiendanubeProduct = async (productData) => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/items/create`, productData);
+  return res.data;
+};
+
+export const updateTiendanubeProduct = async (productId, productData) => {
+  const res = await axios.put(`${API_BASE_URL}/tiendanube/items/${productId}`, productData);
+  return res.data;
+};
+
+export const deleteTiendanubeProduct = async (productId) => {
+  const res = await axios.delete(`${API_BASE_URL}/tiendanube/items/${productId}`);
+  return res.data;
+};
+
+export const updateTiendanubeVariant = async (productId, variantId, variantData) => {
+  const res = await axios.put(`${API_BASE_URL}/tiendanube/items/${productId}/variants/${variantId}`, variantData);
+  return res.data;
+};
+
+export const updateTiendanubeStock = async (productId, stockData) => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/items/${productId}/stock`, stockData);
+  return res.data;
+};
+
+export const fetchTiendanubeCategories = async () => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/tiendanube/categories`);
+    return res.data;
+  } catch (err) {
+    return [];
+  }
+};
+
+export const executeTiendanubeSync = async (params = {}) => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/sync/execute`, params);
+  return res.data;
+};
+
+export const fetchTiendanubeSyncStatus = async () => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/tiendanube/sync/status`);
+    return res.data;
+  } catch (err) {
+    return null;
+  }
+};
+
+export const fetchTiendanubeSyncHistory = async (limit = 50) => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/tiendanube/sync/history?limit=${limit}`);
+    return res.data;
+  } catch (err) {
+    return [];
+  }
+};
+
+
 

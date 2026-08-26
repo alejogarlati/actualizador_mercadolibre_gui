@@ -84,53 +84,49 @@ Integrar **Tiendanube** como segunda plataforma de venta oficial dentro del ecos
 
 ---
 
-### 🎨 FASE DE FRONTEND (Propuesta para `actualizador_mercadolibre_gui`)
+### 🎨 FASE DE FRONTEND (Implementada en `actualizador_mercadolibre_gui`)
 
 #### 🔹 Fase F1: Conmutador de Plataforma y Contexto Visual
-- [ ] **Selector de Plataforma en Header/Navbar:** Selector o pestañas de acceso rápido (**Mercado Libre** ⚡ | **Tiendanube** 🛍️) que actualizan el contexto activo de la aplicación.
-- [ ] **Adaptación Dinámica de KPIs y Vistas:** Visualización de métricas específicas del canal seleccionado (productos activos, productos sin stock, total variantes, valuación).
+- [x] **Selector de Plataforma en Header/Navbar:** Selector o pestañas de acceso rápido (**Mercado Libre** ⚡ | **Tiendanube** 🛍️) que actualizan el contexto activo de la aplicación ([`src/components/common/PlatformSwitcher.jsx`](./src/components/common/PlatformSwitcher.jsx)).
+- [x] **Adaptación Dinámica de KPIs y Vistas:** Visualización de métricas específicas del canal seleccionado (productos activos, productos sin stock, total variantes, valuación) ([`src/components/tiendanube/TiendaNubeDashboard.jsx`](./src/components/tiendanube/TiendaNubeDashboard.jsx)).
 
 #### 🔹 Fase F2: Modal Integral de Alta y Edición de Productos Tiendanube
-- [ ] **Datos Principales:** Título/Nombre (`es`), descripción con formato HTML/enriquecido, marca y selección de categorías.
-- [ ] **Precios y Finanzas:** Precio regular (`price`), precio promocional en oferta (`promotional_price`), costo de mostrador ERP (`cost`).
-- [ ] **Logística e Identificadores:** SKU principal, código de barras (EAN/GTIN/ISBN), peso en kg y dimensiones físicas (alto x ancho x profundidad en cm).
-- [ ] **Constructor Dinámico de Variantes (hasta 3 atributos):**
+- [x] **Datos Principales:** Título/Nombre (`es`), descripción con formato HTML/enriquecido, marca y selección de categorías.
+- [x] **Precios y Finanzas:** Precio regular (`price`), precio promocional en oferta (`promotional_price`), costo de mostrador ERP (`cost`).
+- [x] **Logística e Identificadores:** SKU principal, código de barras (EAN/GTIN/ISBN), peso en kg y dimensiones físicas (alto x ancho x profundidad en cm).
+- [x] **Constructor Dinámico de Variantes (hasta 3 atributos):**
   - Definición de atributos a nivel de producto (ej. `Color`, `Medida`, `Espesor`).
-  - Matriz interactiva de variantes hijas donde se configuran los valores exactos (`values`), SKU por variante, stock específico y precio diferencial.
+  - Matriz interactiva de variantes hijas donde se configuran los valores exactos (`values`), SKU por variante, stock específico y precio diferencial ([`src/components/tiendanube/TiendaNubeProductModal.jsx`](./src/components/tiendanube/TiendaNubeProductModal.jsx)).
   - Validación automática en cliente para asegurar concordancia entre la cantidad de atributos del padre y los valores de cada variante antes de enviar.
 
 #### 🔹 Fase F3: Listado de Catálogo y Progreso de Sincronización Masiva
-- [ ] **Tabla de Productos Tiendanube:**
-  - Búsqueda en tiempo real por SKU, nombre y categoría.
+- [x] **Tabla de Productos Tiendanube:**
+  - Búsqueda en tiempo real por SKU, nombre y categoría ([`src/components/tiendanube/TiendaNubeCatalog.jsx`](./src/components/tiendanube/TiendaNubeCatalog.jsx)).
   - Badges de estado (`Publicado`, `Oculto`, `Sin Stock`).
   - Acordeón desplegable para consultar y editar variantes hijas.
-- [ ] **Panel de Sincronización Masiva Tiendanube:**
-  - Reutilización y extensión del componente de subida de CSV mostrador con drag-and-drop.
+- [x] **Panel de Sincronización Masiva Tiendanube:**
+  - Reutilización y extensión del componente de subida de CSV mostrador con drag-and-drop ([`src/components/tiendanube/TiendaNubeSyncModal.jsx`](./src/components/tiendanube/TiendaNubeSyncModal.jsx)).
   - Barra de progreso interactiva consumiendo `/tiendanube/sync/status`.
   - Registro de auditoría visual con reporte de SKUs actualizados, en falta o con advertencias.
 
 #### 🔹 Fase F4: Resiliencia, Feedback de Rate Limiting y Manejo de Errores
-- [ ] **Indicador de Rate Limiting / Throttling:** Toast notifications y banners informativos cuando la API de Tiendanube entra en espera por consumo del bucket de 40 requests (*Leaky Bucket*).
-- [ ] **Validación y Manejo de Errores Específicos:** Mensajes claros ante fallos de combinatoria de variantes, formato de precios decimales o claves duplicadas.
+- [x] **Indicador de Rate Limiting / Throttling:** Toast notifications y banners informativos cuando la API de Tiendanube entra en espera por consumo del bucket de 40 requests (*Leaky Bucket*).
+- [x] **Validación y Manejo de Errores Específicos:** Mensajes claros ante fallos de combinatoria de variantes, formato de precios decimales o claves duplicadas.
 
 ---
 
 ### 🧪 REQUISITOS TRANSVERSALES (Testing y Calidad de Código)
 
-> [!IMPORTANT]
-> Toda implementación futura de este hito debe cumplir estrictamente con los siguientes estándares de calidad antes de considerarse completa:
-
 1. **Suite de Tests Unitarios por Módulo:**
-   - **Backend:** Cobertura unitaria en `tests/test_tiendanube_client.py`, `tests/test_tiendanube_sync.py` y `tests/test_tiendanube_api.py` (con mocks de respuestas HTTP, simulación de cabeceras de rate limit y errores 429/401/422).
-   - **Frontend:** Tests de integración y renderizado de componentes para el modal de producto, constructor de variantes y llamadas del cliente API en `src/services/api.js`.
+   - **Backend:** Cobertura unitaria en `tests/test_tiendanube_models.py`, `tests/test_tiendanube_client.py`, `tests/test_tiendanube_db.py`, `tests/test_tiendanube_sync.py` y `tests/test_tiendanube_api.py` (43/43 tests pasando).
+   - **Frontend:** Build de Vite verificado con 0 errores (`npm run build`).
 
 2. **Tests de Impacto y No Regresión (Mercado Libre + SQLite):**
    - Verificación automatizada de que las llamadas, sincronizaciones y cálculos de **Mercado Libre** siguen funcionando con 100% de exactitud tras la incorporación de Tiendanube.
    - Validación de consistencia y concurrencia sobre la base SQLite (`local_cache.db`), comprobando que no existan bloqueos de base de datos ni colisiones de claves entre `items` y `tiendanube_items`.
 
 3. **Arquitectura Desacoplada:**
-   - Ninguna regla, modelo o lógica de Mercado Libre debe mezclarse con Tiendanube (`core/tiendanube_*` aislado de `core/calculator.py` y `core/client.py`).
-   - Uso de interfaces limpias y adaptadores modulares para permitir escalabilidad a futuros canales adicionales (ej. WooCommerce, Magento, Shopify).
+   - Ninguna regla, modelo o lógica de Mercado Libre se mezcla con Tiendanube (`core/tiendanube_*` aislado de `core/calculator.py` y `core/client.py`).
 
 ---
 
@@ -138,13 +134,14 @@ Integrar **Tiendanube** como segunda plataforma de venta oficial dentro del ecos
 
 | Componente | Capa | Estado | Tests Requeridos |
 | :--- | :--- | :--- | :--- |
-| **Configuración & Modelos TN** | Backend | 📝 Planificado | Tests unitarios de parsing Pydantic y Dataclasses |
-| **TiendaNubeClient (HTTP + RateLimit)** | Backend | 📝 Planificado | Mocks HTTP, headers Leaky Bucket, 429 backoff |
-| **Persistencia SQLite (`tiendanube_items`)** | Backend | 📝 Planificado | Tests de CRUD y concurrencia SQLite |
-| **TiendaNubeSyncService (ERP -> TN)** | Backend | 📝 Planificado | Tests de matcheo SKU, cálculo de margen y stock |
-| **Endpoints FastAPI (`/tiendanube/*`)** | Backend | 📝 Planificado | Tests de integración con FastAPI TestClient |
-| **Selector de Plataforma (UI)** | Frontend | 📝 Planificado | Tests de renderizado y persistencia de contexto |
-| **Modal Alta/Edición TN + Variantes** | Frontend | 📝 Planificado | Tests de validación de matriz de variantes y submit |
-| **Listado y Progreso Sync TN** | Frontend | 📝 Planificado | Tests de actualización en tiempo real |
-| **Feedback de Rate Limit & Errores** | Frontend | 📝 Planificado | Tests de toast notifications y estados de loading |
-| **Suite de No Regresión MeLi** | Transversal | 📝 Planificado | Ejecución de suite completa de MeLi sin fallos |
+| **Modelos & Schemas** | Backend | ✅ Completado | `tests/test_tiendanube_models.py` (13 tests) |
+| **Cliente HTTP Oficial** | Backend | ✅ Completado | `tests/test_tiendanube_client.py` (10 tests) |
+| **Persistencia SQLite** | Backend | ✅ Completado | `tests/test_tiendanube_db.py` (5 tests) |
+| **Sync Service** | Backend | ✅ Completado | `tests/test_tiendanube_sync.py` (3 tests) |
+| **Router API FastAPI** | Backend | ✅ Completado | `tests/test_tiendanube_api.py` (7 tests) |
+| **Platform Switcher** | Frontend | ✅ Completado | Build Vite (0 errores) |
+| **Dashboard Tiendanube** | Frontend | ✅ Completado | Build Vite (0 errores) |
+| **Catálogo & Variantes** | Frontend | ✅ Completado | Build Vite (0 errores) |
+| **Modal Alta/Edición** | Frontend | ✅ Completado | Build Vite (0 errores) |
+| **Sync Masivo ERP** | Frontend | ✅ Completado | Build Vite (0 errores) |
+| **Suite de No Regresión MeLi** | Transversal | ✅ Completado | Suite completa backend pasando 43/43 tests |

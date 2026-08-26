@@ -56,13 +56,41 @@ import {
   fetchAppSettings,
   saveAppSettings,
   fetchAuditReport,
-  fetchLogs
+  fetchLogs,
+  checkTiendanubeHealth,
+  fetchTiendanubeMetrics,
+  fetchTiendanubeItems,
+  fetchTiendanubeItemDetail,
+  refreshTiendanubeCatalog,
+  createTiendanubeProduct,
+  updateTiendanubeProduct,
+  deleteTiendanubeProduct,
+  updateTiendanubeVariant,
+  updateTiendanubeStock,
+  fetchTiendanubeCategories
 } from './services/api';
+
+import PlatformSwitcher from './components/common/PlatformSwitcher';
+import TiendaNubeDashboard from './components/tiendanube/TiendaNubeDashboard';
+import TiendaNubeCatalog from './components/tiendanube/TiendaNubeCatalog';
+import TiendaNubeProductModal from './components/tiendanube/TiendaNubeProductModal';
+import TiendaNubeSyncModal from './components/tiendanube/TiendaNubeSyncModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedPlatform, setSelectedPlatform] = useState('mercadolibre'); // 'mercadolibre' | 'tiendanube'
   const [health, setHealth] = useState({ status: 'checking', token_valid: false });
   const [stats, setStats] = useState(null);
+
+  // Estados de Tiendanube (Nuvemshop)
+  const [tnHealth, setTnHealth] = useState({ status: 'checking', configured: false });
+  const [tnMetrics, setTnMetrics] = useState(null);
+  const [tnItems, setTnItems] = useState([]);
+  const [tnCategories, setTnCategories] = useState([]);
+  const [tnLoading, setTnLoading] = useState(false);
+  const [tnProductModalOpen, setTnProductModalOpen] = useState(false);
+  const [tnEditingProduct, setTnEditingProduct] = useState(null);
+  const [tnSyncModalOpen, setTnSyncModalOpen] = useState(false);
 
   // Sistema de Notificaciones Toast
   const [toasts, setToasts] = useState([]);
@@ -230,15 +258,104 @@ export default function App() {
     loadHealthAndStats();
     loadAppSettingsData();
     loadAnalytics();
+    loadTiendanubeData();
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'items') {
-      loadItems();
-    } else if (activeTab === 'dashboard') {
-      loadAnalytics();
+    if (selectedPlatform === 'tiendanube') {
+      loadTiendanubeData();
+    } else {
+      if (activeTab === 'items') {
+        loadItems();
+      } else if (activeTab === 'dashboard') {
+        loadAnalytics();
+      }
     }
-  }, [activeTab]);
+  }, [activeTab, selectedPlatform]);
+
+  const loadTiendanubeData = async () => {
+    setTnLoading(true);
+    try {
+      const [h, m, itms, cats] = await Promise.all([
+        checkTiendanubeHealth(),
+        fetchTiendanubeMetrics(),
+        fetchTiendanubeItems(),
+        fetchTiendanubeCategories()
+      ]);
+      setTnHealth(h);
+      setTnMetrics(m);
+      setTnItems(itms);
+      setTnCategories(cats);
+    } catch (err) {
+      console.error('Error al cargar datos de Tiendanube:', err);
+    } finally {
+      setTnLoading(false);
+    }
+  };
+
+  const handleRefreshTiendanubeCatalog = async () => {
+    setTnLoading(true);
+    try {
+      const res = await refreshTiendanubeCatalog();
+      addToast('success', 'Catálogo Sincronizado', `${res.synced_products || 0} productos descargados desde Tiendanube.`);
+      await loadTiendanubeData();
+    } catch (err) {
+      addToast('error', 'Error al sincronizar', err.message);
+    } finally {
+      setTnLoading(false);
+    }
+  };
+
+  const handleSaveTiendanubeProduct = async (payload) => {
+    try {
+      if (tnEditingProduct?.id) {
+        await updateTiendanubeProduct(tnEditingProduct.id, payload);
+        addToast('success', 'Producto Actualizado', 'Los cambios se guardaron en Tiendanube y en la base local.');
+      } else {
+        await createTiendanubeProduct(payload);
+        addToast('success', 'Producto Creado', 'El nuevo producto y sus variantes fueron creados en Tiendanube.');
+      }
+      setTnProductModalOpen(false);
+      setTnEditingProduct(null);
+      await loadTiendanubeData();
+    } catch (err) {
+      const msg = err.response?.data?.detail || err.message;
+      addToast('error', 'Error al guardar', typeof msg === 'object' ? JSON.stringify(msg) : msg);
+    }
+  };
+
+  const handleDeleteTiendanubeProduct = async (productId) => {
+    if (!window.confirm(`¿Estás seguro de eliminar el producto #${productId} de Tiendanube?`)) return;
+    try {
+      await deleteTiendanubeProduct(productId);
+      addToast('success', 'Producto Eliminado', `El producto #${productId} fue eliminado.`);
+      await loadTiendanubeData();
+    } catch (err) {
+      addToast('error', 'Error al eliminar', err.message);
+    }
+  };
+
+  const handleQuickUpdateTiendanube = async (productId, updates) => {
+    try {
+      if (updates.stock !== undefined) {
+        await updateTiendanubeStock(productId, { stock: updates.stock, inventory_mode: 'replace' });
+      }
+      if (updates.price !== undefined || updates.promotional_price !== undefined) {
+        const item = tnItems.find(i => i.id === productId);
+        const variantId = item?.variants?.[0]?.id;
+        if (variantId) {
+          await updateTiendanubeVariant(productId, variantId, {
+            price: updates.price,
+            promotional_price: updates.promotional_price
+          });
+        }
+      }
+      addToast('success', 'Ajuste Guardado', 'Precio y stock actualizados en Tiendanube.');
+      await loadTiendanubeData();
+    } catch (err) {
+      addToast('error', 'Error al actualizar', err.message);
+    }
+  };
 
   const loadHealthAndStats = async () => {
     setHealthRefreshing(true);
@@ -692,44 +809,146 @@ export default function App() {
       <main className="flex-1 flex flex-col p-8 overflow-y-auto bg-slate-50 gap-6">
         
         {/* PAGE HEADER & ESTADO DE AUTENTICACIÓN */}
-        <header className="flex items-center justify-between pb-2 border-b border-slate-200">
+        <header className="flex flex-col md:flex-row md:items-center justify-between pb-3 border-b border-slate-200 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-              {activeTab === 'dashboard' && 'Panel de Control & Analíticas'}
-              {activeTab === 'items' && 'Inventario de Publicaciones'}
-              {activeTab === 'sync' && 'Sincronizador Masivo desde ERP'}
-              {activeTab === 'audit' && 'Auditoría de Neto a Recibir'}
-              {activeTab === 'calculator' && 'Calculadora & Simulador Estratégico'}
-              {activeTab === 'rules' && 'Configuración del Sistema'}
-            </h2>
-            <p className="text-xs text-slate-500 mt-1">Gestión automatizada de precios, márgenes y analíticas para Mercado Libre</p>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                {selectedPlatform === 'tiendanube' ? (
+                  activeTab === 'items' ? 'Catálogo de Productos Tiendanube' :
+                  activeTab === 'sync' ? 'Sincronizador Masivo Tiendanube' :
+                  'Panel Multicanal Tiendanube'
+                ) : (
+                  activeTab === 'dashboard' ? 'Panel de Control & Analíticas' :
+                  activeTab === 'items' ? 'Inventario de Publicaciones' :
+                  activeTab === 'sync' ? 'Sincronizador Masivo desde ERP' :
+                  activeTab === 'audit' ? 'Auditoría de Neto a Recibir' :
+                  activeTab === 'calculator' ? 'Calculadora & Simulador Estratégico' :
+                  'Configuración del Sistema'
+                )}
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-1">
+              {selectedPlatform === 'tiendanube'
+                ? 'Gestión multicanal directa, catálogo con variantes multilingües y sincronización con Nuvemshop'
+                : 'Gestión automatizada de precios, márgenes y analíticas para Mercado Libre'}
+            </p>
           </div>
 
-          {/* BADGE DE CONEXIÓN */}
-          <div className="flex items-center gap-3">
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-              health.token_valid 
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                : 'bg-red-50 text-red-700 border-red-200'
-            }`}>
-              {health.token_valid ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
-              {health.token_valid ? `Conectado (${health.nickname})` : 'Backend / Token Expirado'}
-            </div>
+          {/* PLATFORM SWITCHER & BADGE DE CONEXIÓN */}
+          <div className="flex items-center gap-3 self-end md:self-auto">
+            {/* Conmutador de Plataforma */}
+            <PlatformSwitcher
+              selectedPlatform={selectedPlatform}
+              onSelectPlatform={(p) => {
+                setSelectedPlatform(p);
+                if (p === 'tiendanube') loadTiendanubeData();
+              }}
+            />
 
-            <button
-              onClick={loadHealthAndStats}
-              disabled={healthRefreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-colors disabled:opacity-50"
-              title="Recomprobar conexión"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${healthRefreshing ? 'spinning' : ''}`} />
-              {healthRefreshing ? 'Verificando...' : 'Reconectar'}
-            </button>
+            {/* Badges de Conexión según Plataforma */}
+            {selectedPlatform === 'tiendanube' ? (
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                  tnHealth.status === 'online'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-red-50 text-red-700 border-red-200'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${tnHealth.status === 'online' ? 'bg-blue-500 animate-pulse' : 'bg-red-500'}`} />
+                  {tnHealth.status === 'online' ? `Tiendanube #${tnHealth.store_id || '8145042'}` : 'Tiendanube Desconectado'}
+                </div>
+
+                <button
+                  onClick={loadTiendanubeData}
+                  disabled={tnLoading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-colors disabled:opacity-50"
+                  title="Recomprobar conexión a Tiendanube"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${tnLoading ? 'animate-spin text-blue-600' : ''}`} />
+                  {tnLoading ? 'Verificando...' : 'Reconectar'}
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                  health.token_valid 
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                    : 'bg-red-50 text-red-700 border-red-200'
+                }`}>
+                  {health.token_valid ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+                  {health.token_valid ? `Conectado (${health.nickname})` : 'Backend / Token Expirado'}
+                </div>
+
+                <button
+                  onClick={loadHealthAndStats}
+                  disabled={healthRefreshing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-colors disabled:opacity-50"
+                  title="Recomprobar conexión"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${healthRefreshing ? 'spinning' : ''}`} />
+                  {healthRefreshing ? 'Verificando...' : 'Reconectar'}
+                </button>
+              </div>
+            )}
           </div>
         </header>
 
-        {/* BANNER SI ESTÁ OFFLINE */}
-        {!health.token_valid && (
+        {/* VISTAS DE TIENDANUBE */}
+        {selectedPlatform === 'tiendanube' && (
+          <div className="flex flex-col gap-6">
+            {activeTab === 'dashboard' && (
+              <TiendaNubeDashboard
+                health={tnHealth}
+                metrics={tnMetrics}
+                loading={tnLoading}
+                onRefreshCatalog={handleRefreshTiendanubeCatalog}
+                onOpenSync={() => setTnSyncModalOpen(true)}
+                onOpenCreateModal={() => {
+                  setTnEditingProduct(null);
+                  setTnProductModalOpen(true);
+                }}
+                onNavigateToCatalog={() => setActiveTab('items')}
+              />
+            )}
+
+            {activeTab === 'items' && (
+              <TiendaNubeCatalog
+                items={tnItems}
+                categories={tnCategories}
+                loading={tnLoading}
+                onRefresh={handleRefreshTiendanubeCatalog}
+                onOpenCreate={() => {
+                  setTnEditingProduct(null);
+                  setTnProductModalOpen(true);
+                }}
+                onOpenEdit={async (id) => {
+                  const detail = await fetchTiendanubeItemDetail(id);
+                  setTnEditingProduct(detail || tnItems.find(i => i.id === id));
+                  setTnProductModalOpen(true);
+                }}
+                onDelete={handleDeleteTiendanubeProduct}
+                onQuickUpdate={handleQuickUpdateTiendanube}
+              />
+            )}
+
+            {activeTab === 'sync' && (
+              <TiendaNubeDashboard
+                health={tnHealth}
+                metrics={tnMetrics}
+                loading={tnLoading}
+                onRefreshCatalog={handleRefreshTiendanubeCatalog}
+                onOpenSync={() => setTnSyncModalOpen(true)}
+                onOpenCreateModal={() => {
+                  setTnEditingProduct(null);
+                  setTnProductModalOpen(true);
+                }}
+                onNavigateToCatalog={() => setActiveTab('items')}
+              />
+            )}
+          </div>
+        )}
+
+        {/* BANNER SI ESTÁ OFFLINE EN MERCADO LIBRE */}
+        {selectedPlatform === 'mercadolibre' && !health.token_valid && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4 text-amber-900 shadow-sm">
             <div className="p-2 bg-amber-100 text-amber-700 rounded-xl">
               <AlertTriangle className="w-5 h-5" />
@@ -748,7 +967,7 @@ export default function App() {
         )}
 
         {/* TAB 1: DASHBOARD & ANALÍTICAS ME LI */}
-        {activeTab === 'dashboard' && (
+        {selectedPlatform === 'mercadolibre' && activeTab === 'dashboard' && (
           <div className="flex flex-col gap-6">
             {/* KPI CARDS SUPERIORES */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -2077,6 +2296,28 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* MODAL INTEGRAL DE PRODUCTO TIENDANUBE (CREAR / EDITAR) */}
+      <TiendaNubeProductModal
+        isOpen={tnProductModalOpen}
+        productData={tnEditingProduct}
+        categories={tnCategories}
+        onClose={() => {
+          setTnProductModalOpen(false);
+          setTnEditingProduct(null);
+        }}
+        onSave={handleSaveTiendanubeProduct}
+      />
+
+      {/* MODAL DE SINCRONIZACIÓN MASIVA TIENDANUBE */}
+      <TiendaNubeSyncModal
+        isOpen={tnSyncModalOpen}
+        onClose={() => setTnSyncModalOpen(false)}
+        onSyncFinished={() => {
+          loadTiendanubeData();
+          addToast('success', 'Sincronización Finalizada', 'Precios y stock actualizados en Tiendanube.');
+        }}
+      />
 
     </div>
   );

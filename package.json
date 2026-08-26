@@ -1,8 +1,8 @@
 {
   "name": "sync-meli-gui",
   "private": true,
-  "version": "0.2.0",
-  "description": "Actualizador Masivo de Precios para Mercado Libre - Corralón Aconquija",
+  "version": "0.3.0",
+  "description": "Actualizador Multicanal de Precios y Stock (Mercado Libre & Tiendanube) - Corralón Aconquija",
   "author": "Corralón Aconquija",
   "main": "electron/main.js",
   "scripts": {
