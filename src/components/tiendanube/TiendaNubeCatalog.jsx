@@ -381,8 +381,8 @@ export default function TiendaNubeCatalog({
               className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 font-medium"
             >
               <option value="all">Todos los factores</option>
-              <option value="custom">🎯 Descuento Manual</option>
-              <option value="category">📁 Descuento Categoría</option>
+              <option value="custom">Descuento Manual</option>
+              <option value="category">Descuento Categoría</option>
             </select>
 
             {/* Filtro por Stock */}
@@ -392,8 +392,8 @@ export default function TiendaNubeCatalog({
               className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 font-medium"
             >
               <option value="all">Todo el stock</option>
-              <option value="in_stock">🟢 Con Stock</option>
-              <option value="out_of_stock">🔴 Sin Stock (Agotado)</option>
+              <option value="in_stock">Con Stock</option>
+              <option value="out_of_stock">Sin Stock (Agotado)</option>
             </select>
 
             {/* Filtro por Costo ERP */}
@@ -403,8 +403,8 @@ export default function TiendaNubeCatalog({
               className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 font-medium"
             >
               <option value="all">Todos los costos</option>
-              <option value="with_cost">💲 Con Costo ERP</option>
-              <option value="no_cost">⚠️ Sin Costo ERP</option>
+              <option value="with_cost">Con Costo ERP</option>
+              <option value="no_cost">Sin Costo ERP</option>
             </select>
 
             {/* Filtro por Estado */}
@@ -1023,7 +1023,7 @@ export default function TiendaNubeCatalog({
               className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-white hover:bg-red-50 text-red-700 transition-all shadow-md shadow-red-950/20 cursor-pointer disabled:opacity-50"
             >
               <Percent className="w-3.5 h-3.5" />
-              <span>🎯 Descuento en Lote</span>
+              <span>Descuento en Lote</span>
             </button>
 
             {/* Botón Modificar Precios en Lote */}
@@ -1033,7 +1033,7 @@ export default function TiendaNubeCatalog({
               className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-white/15 hover:bg-white/25 text-white border border-white/40 transition-all shadow-sm cursor-pointer disabled:opacity-50"
             >
               <Sliders className="w-3.5 h-3.5 text-white" />
-              <span>💲 Modificar Precios</span>
+              <span>Modificar Precios</span>
             </button>
           </div>
         </div>
@@ -1116,7 +1116,7 @@ export default function TiendaNubeCatalog({
               </div>
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500">
-                💡 <strong className="text-slate-700">Nota:</strong> Se recalcularán los precios según el costo ERP de cada variante y se impactarán inmediatamente en Tiendanube y en la base local.
+                <strong className="text-slate-700">Nota:</strong> Se recalcularán los precios según el costo ERP de cada variante y se impactarán inmediatamente en Tiendanube y en la base local.
               </div>
             </div>
 
@@ -1171,9 +1171,9 @@ export default function TiendaNubeCatalog({
                   onChange={(e) => setBatchPriceMode(e.target.value)}
                   className="w-full bg-slate-50 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 font-medium"
                 >
-                  <option value="percentage_adjust">📈 Ajustar precio actual por porcentaje (+% / -%)</option>
-                  <option value="discount_on_price">🏷️ Aplicar descuento porcentual sobre precio (-%)</option>
-                  <option value="fixed_price">💲 Fijar precio de lista fijo ($)</option>
+                  <option value="percentage_adjust">Ajustar precio actual por porcentaje (+% / -%)</option>
+                  <option value="discount_on_price">Aplicar descuento porcentual sobre precio (-%)</option>
+                  <option value="fixed_price">Fijar precio de lista fijo ($)</option>
                 </select>
               </div>
 

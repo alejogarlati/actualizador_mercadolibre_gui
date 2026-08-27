@@ -11,7 +11,8 @@ import {
   CheckCircle2, 
   AlertCircle,
   Folder,
-  Tag
+  Tag,
+  Zap
 } from 'lucide-react';
 
 export default function TiendaNubeCategoriesView({ 
@@ -194,8 +195,9 @@ export default function TiendaNubeCategoriesView({
                                 <span className="text-[10px] font-mono text-slate-400">#{sub.id}</span>
                               </div>
                               {isInherited && (
-                                <span className="text-[10px] text-amber-700 font-medium">
-                                  ⚡ Hereda {currentDiscount}% de la categoría padre
+                                <span className="text-[10px] text-amber-700 font-medium inline-flex items-center gap-1">
+                                  <Zap className="w-3 h-3 text-amber-600" />
+                                  <span>Hereda {currentDiscount}% de la categoría padre</span>
                                 </span>
                               )}
                             </div>

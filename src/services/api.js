@@ -125,7 +125,7 @@ export const fetchLogs = async (lines = 30) => {
     const res = await axios.get(`${API_BASE_URL}/logs?lines=${lines}`);
     return res.data.logs || [];
   } catch (err) {
-    return ['⚠️ No se pudo conectar al servidor de logs.'];
+    return ['No se pudo conectar al servidor de logs.'];
   }
 };
 

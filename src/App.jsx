@@ -41,6 +41,7 @@ import {
   Sparkles,
   SlidersHorizontal,
   Tag,
+  Folder,
   ArrowLeft,
   ShoppingBag
 } from 'lucide-react';
@@ -574,10 +575,10 @@ export default function App() {
     setFile(selectedFile);
     try {
       const res = await uploadCSV(selectedFile);
-      setSyncStatus(`✓ Archivo '${selectedFile.name}' cargado correctamente.`);
+      setSyncStatus(`Archivo '${selectedFile.name}' cargado correctamente.`);
       addToast('success', 'Archivo CSV Cargado', `Planilla '${selectedFile.name}' lista para procesar.`);
     } catch (err) {
-      setSyncStatus(`❌ Error al subir CSV: ${err.message}`);
+      setSyncStatus(`Error al subir CSV: ${err.message}`);
       addToast('error', 'Error al Subir Planilla', err.message);
     }
   };
@@ -585,10 +586,10 @@ export default function App() {
   const triggerSyncExecution = async () => {
     try {
       const res = await executeSync(calcForm.margen_adicional_pct);
-      setSyncStatus(`🚀 ${res.message}`);
+      setSyncStatus(res.message || 'Sincronización masiva iniciada.');
       addToast('info', 'Sincronización Iniciada', 'Procesando actualización de precios en segundo plano...');
     } catch (err) {
-      setSyncStatus(`❌ Error al iniciar sincronización: ${err.message}`);
+      setSyncStatus(`Error al iniciar sincronización: ${err.message}`);
       addToast('error', 'Error de Ejecución', err.message);
     }
   };
@@ -1377,8 +1378,8 @@ export default function App() {
                     className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl px-3 py-2 outline-none hover:border-slate-300"
                   >
                     <option value="all">Todos los estados</option>
-                    <option value="active">🟢 Solo Activas</option>
-                    <option value="paused">🔴 Solo Pausadas</option>
+                    <option value="active">Solo Activas</option>
+                    <option value="paused">Solo Pausadas</option>
                   </select>
                 </div>
 
@@ -1390,8 +1391,8 @@ export default function App() {
                     className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl px-3 py-2 outline-none hover:border-slate-300"
                   >
                     <option value="all">SKU: Todos</option>
-                    <option value="with_sku">✅ Con SKU asignado</option>
-                    <option value="no_sku">⚠️ Sin SKU (N/A)</option>
+                    <option value="with_sku">Con SKU asignado</option>
+                    <option value="no_sku">Sin SKU (N/A)</option>
                   </select>
                 </div>
 
@@ -1533,8 +1534,9 @@ export default function App() {
 
                               <td className="py-3 px-4 max-w-xs truncate font-medium text-slate-900 group-hover:text-red-950">
                                 <div>{item.title}</div>
-                                <div className="text-[10px] text-slate-400 font-sans truncate" title={item.category_name || item.category_id}>
-                                  📁 {item.category_name || item.category_id}
+                                <div className="text-[10px] text-slate-400 font-sans truncate flex items-center gap-1 mt-0.5" title={item.category_name || item.category_id}>
+                                  <Folder className="w-3 h-3 text-slate-400 shrink-0" />
+                                  <span>{item.category_name || item.category_id}</span>
                                 </div>
                               </td>
 
@@ -1584,7 +1586,8 @@ export default function App() {
                                 <td colSpan={8} className="py-3 px-8">
                                   <div className="bg-white border border-slate-200 rounded-xl p-3 shadow-xs">
                                     <div className="text-[11px] font-bold text-slate-700 mb-2 flex items-center gap-1.5">
-                                      <span>🧩 Variaciones ({item.variations.length})</span>
+                                      <Layers className="w-3.5 h-3.5 text-slate-500" />
+                                      <span>Variaciones ({item.variations.length})</span>
                                     </div>
                                     <div className="divide-y divide-slate-100">
                                       {item.variations.map(varItem => (
@@ -1721,10 +1724,10 @@ export default function App() {
                     className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl px-3 py-2 outline-none"
                   >
                     <option value="all">Todos los dictámenes</option>
-                    <option value="OK">🟢 En Rango OK</option>
-                    <option value="BAJO">🔴 Recibe Menos que ERP</option>
-                    <option value="ALTO">🟡 Recibe Más que ERP</option>
-                    <option value="SIN_ERP">⚪ Sin Coincidencia ERP</option>
+                    <option value="OK">En Rango OK</option>
+                    <option value="BAJO">Recibe Menos que ERP</option>
+                    <option value="ALTO">Recibe Más que ERP</option>
+                    <option value="SIN_ERP">Sin Coincidencia ERP</option>
                   </select>
                 </div>
 
@@ -1736,8 +1739,8 @@ export default function App() {
                     className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl px-3 py-2 outline-none"
                   >
                     <option value="all">SKU: Todos</option>
-                    <option value="with_sku">✅ Con SKU asignado</option>
-                    <option value="no_sku">⚠️ Sin SKU (N/A)</option>
+                    <option value="with_sku">Con SKU asignado</option>
+                    <option value="no_sku">Sin SKU (N/A)</option>
                   </select>
                 </div>
 
@@ -2328,15 +2331,16 @@ export default function App() {
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
                     className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-900 outline-none focus:border-red-600 font-medium"
                   >
-                    <option value="active">🟢 Activa</option>
-                    <option value="paused">🔴 Pausada</option>
+                    <option value="active">Activa</option>
+                    <option value="paused">Pausada</option>
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1">
                   <label className="font-bold text-slate-700">Categoría Mercado Libre</label>
-                  <div className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 truncate" title={editingItem.category_name || editForm.category_id}>
-                    📁 {editingItem.category_name || editForm.category_id}
+                  <div className="bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 truncate flex items-center gap-1.5" title={editingItem.category_name || editForm.category_id}>
+                    <Folder className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span>{editingItem.category_name || editForm.category_id}</span>
                   </div>
                 </div>
               </div>
@@ -2378,15 +2382,22 @@ export default function App() {
             <div className="flex items-start justify-between border-b border-slate-100 pb-4">
               <div className="pr-4">
                 <div className="flex items-center gap-2">
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     inspectingAuditItem.status_evaluacion === 'OK' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                     inspectingAuditItem.status_evaluacion === 'BAJO' ? 'bg-red-50 text-red-700 border border-red-200' :
                     inspectingAuditItem.status_evaluacion === 'ALTO' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
                     'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}>
-                    {inspectingAuditItem.status_evaluacion === 'OK' ? '🟢 En Rango Rentable' :
-                     inspectingAuditItem.status_evaluacion === 'BAJO' ? '🔴 Margen por Debajo del ERP' :
-                     inspectingAuditItem.status_evaluacion === 'ALTO' ? '🟡 Margen por Encima del ERP' : '⚪ Sin Coincidencia ERP'}
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      inspectingAuditItem.status_evaluacion === 'OK' ? 'bg-emerald-500' :
+                      inspectingAuditItem.status_evaluacion === 'BAJO' ? 'bg-red-500' :
+                      inspectingAuditItem.status_evaluacion === 'ALTO' ? 'bg-amber-500' : 'bg-slate-400'
+                    }`} />
+                    <span>
+                      {inspectingAuditItem.status_evaluacion === 'OK' ? 'En Rango Rentable' :
+                       inspectingAuditItem.status_evaluacion === 'BAJO' ? 'Margen por Debajo del ERP' :
+                       inspectingAuditItem.status_evaluacion === 'ALTO' ? 'Margen por Encima del ERP' : 'Sin Coincidencia ERP'}
+                    </span>
                   </span>
                   <span className="text-xs text-slate-400 font-mono">SKU: {inspectingAuditItem.sku || 'N/A'}</span>
                 </div>

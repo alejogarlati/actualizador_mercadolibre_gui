@@ -313,9 +313,9 @@ export default function TiendaNubeAuditView({
               className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500"
             >
               <option value="all">Todos los dictámenes</option>
-              <option value="DIFERENCIA">🔴 Solo Diferencias</option>
-              <option value="OK">🟢 Solo Sincronizados (OK)</option>
-              <option value="SIN_ERP">⚪ Sin Costo ERP</option>
+              <option value="DIFERENCIA">Solo Diferencias</option>
+              <option value="OK">Solo Sincronizados (OK)</option>
+              <option value="SIN_ERP">Sin Costo ERP</option>
             </select>
           </div>
 
@@ -518,12 +518,15 @@ export default function TiendaNubeAuditView({
 
                       {/* Dictamen */}
                       <td className="py-3 px-4 text-center">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border ${
                           isOk ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
                           isDiff ? 'bg-red-50 text-red-700 border-red-200' :
                           'bg-slate-100 text-slate-600 border-slate-200'
                         }`}>
-                          {isOk ? '🟢 OK' : isDiff ? '🔴 DIFERENCIA' : '⚪ SIN ERP'}
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            isOk ? 'bg-emerald-500' : isDiff ? 'bg-red-500' : 'bg-slate-400'
+                          }`} />
+                          <span>{isOk ? 'OK' : isDiff ? 'DIFERENCIA' : 'SIN ERP'}</span>
                         </span>
                       </td>
 
