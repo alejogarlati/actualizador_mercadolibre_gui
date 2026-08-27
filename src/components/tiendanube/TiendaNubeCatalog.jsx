@@ -23,6 +23,11 @@ import {
   ArrowUp,
   ArrowDown,
   RotateCcw,
+  CheckSquare,
+  Square,
+  MinusSquare,
+  Settings2,
+  Check,
   X
 } from 'lucide-react';
 
@@ -35,7 +40,9 @@ export default function TiendaNubeCatalog({
   onOpenEdit, 
   onDelete,
   onQuickUpdate,
-  onSaveVariantOverride 
+  onSaveVariantOverride,
+  onBatchUpdateOverrides,
+  onBatchUpdatePrices
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -51,6 +58,20 @@ export default function TiendaNubeCatalog({
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25); // 15, 25, 50, 100, 'all'
+
+  // Selección múltiple para acciones en lote
+  const [selectedVariantIds, setSelectedVariantIds] = useState(new Set());
+  const [batchProcessing, setBatchProcessing] = useState(false);
+
+  // Modal de Descuento en Lote
+  const [batchDiscountModalOpen, setBatchDiscountModalOpen] = useState(false);
+  const [batchDiscountMode, setBatchDiscountMode] = useState('custom'); // 'custom', 'reset'
+  const [batchDiscountPct, setBatchDiscountPct] = useState('15');
+
+  // Modal de Precios en Lote
+  const [batchPriceModalOpen, setBatchPriceModalOpen] = useState(false);
+  const [batchPriceMode, setBatchPriceMode] = useState('percentage_adjust'); // 'percentage_adjust', 'discount_on_price', 'fixed_price'
+  const [batchPriceValue, setBatchPriceValue] = useState('10');
 
   // Quick edit state (precio y stock)
   const [quickEditItem, setQuickEditItem] = useState(null);
@@ -218,6 +239,78 @@ export default function TiendaNubeCatalog({
 
   const startIdx = sortedVariants.length === 0 ? 0 : (currentPage - 1) * effectivePageSize + 1;
   const endIdx = pageSize === 'all' ? sortedVariants.length : Math.min(currentPage * pageSize, sortedVariants.length);
+
+  // Selección múltiple para acciones en lote
+  const selectedCount = selectedVariantIds.size;
+  const isAllVisibleSelected = paginatedVariants.length > 0 && paginatedVariants.every(v => selectedVariantIds.has(v.variant_id));
+  const isSomeVisibleSelected = paginatedVariants.some(v => selectedVariantIds.has(v.variant_id)) && !isAllVisibleSelected;
+
+  const toggleSelectVariant = (variantId) => {
+    setSelectedVariantIds(prev => {
+      const next = new Set(prev);
+      if (next.has(variantId)) next.delete(variantId);
+      else next.add(variantId);
+      return next;
+    });
+  };
+
+  const toggleSelectVisible = () => {
+    setSelectedVariantIds(prev => {
+      const next = new Set(prev);
+      if (isAllVisibleSelected) {
+        paginatedVariants.forEach(v => next.delete(v.variant_id));
+      } else {
+        paginatedVariants.forEach(v => next.add(v.variant_id));
+      }
+      return next;
+    });
+  };
+
+  const selectAllFiltered = () => {
+    setSelectedVariantIds(new Set(sortedVariants.map(v => v.variant_id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedVariantIds(new Set());
+  };
+
+  const handleExecuteBatchDiscount = async () => {
+    if (selectedVariantIds.size === 0 || !onBatchUpdateOverrides) return;
+    setBatchProcessing(true);
+    try {
+      const items = sortedVariants
+        .filter(v => selectedVariantIds.has(v.variant_id))
+        .map(v => ({ product_id: v.product_id, variant_id: v.variant_id, sku: v.sku }));
+
+      const pct = batchDiscountMode === 'custom' ? parseFloat(batchDiscountPct) : null;
+      await onBatchUpdateOverrides(items, pct);
+      setBatchDiscountModalOpen(false);
+      clearSelection();
+    } catch (err) {
+      console.error('Error batch discount:', err);
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
+  const handleExecuteBatchPrice = async () => {
+    if (selectedVariantIds.size === 0 || !onBatchUpdatePrices) return;
+    setBatchProcessing(true);
+    try {
+      const items = sortedVariants
+        .filter(v => selectedVariantIds.has(v.variant_id))
+        .map(v => ({ product_id: v.product_id, variant_id: v.variant_id, sku: v.sku }));
+
+      const val = parseFloat(batchPriceValue);
+      await onBatchUpdatePrices(items, batchPriceMode, val);
+      setBatchPriceModalOpen(false);
+      clearSelection();
+    } catch (err) {
+      console.error('Error batch price:', err);
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
 
   const getPageNumbers = () => {
     const pages = [];
@@ -395,7 +488,19 @@ export default function TiendaNubeCatalog({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4 w-10 text-center select-none">#</th>
+                <th className="py-3.5 px-3 w-10 text-center select-none">
+                  <div className="flex items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={isAllVisibleSelected}
+                      ref={el => { if (el) el.indeterminate = isSomeVisibleSelected; }}
+                      onChange={toggleSelectVisible}
+                      className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500 cursor-pointer"
+                      title="Seleccionar todas las variantes visibles"
+                    />
+                  </div>
+                </th>
+                <th className="py-3.5 px-2 w-8 text-center select-none text-slate-400">#</th>
                 <th 
                   onClick={() => handleSort('product_name')}
                   className="py-3.5 px-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
@@ -474,14 +579,14 @@ export default function TiendaNubeCatalog({
             <tbody className="divide-y divide-slate-100 text-slate-800">
               {loading && variants.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="py-16 text-center text-slate-500">
+                  <td colSpan="11" className="py-16 text-center text-slate-500">
                     <RefreshCw className="w-7 h-7 animate-spin mx-auto mb-2 text-red-600" />
                     <span className="font-semibold">Cargando variantes de Tiendanube...</span>
                   </td>
                 </tr>
               ) : paginatedVariants.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="py-16 text-center text-slate-500">
+                  <td colSpan="11" className="py-16 text-center text-slate-500">
                     <Package className="w-10 h-10 mx-auto mb-2 text-slate-400" />
                     <p className="text-sm font-bold text-slate-700">No se encontraron variantes</p>
                     <p className="text-xs text-slate-400 mt-1">Prueba refrescar desde la API o modificar los filtros de búsqueda.</p>
@@ -492,11 +597,25 @@ export default function TiendaNubeCatalog({
                   const hasPromo = item.promotional_price && item.promotional_price > 0;
                   const rowNumber = startIdx + idx;
                   const isCustom = item.discount_origin === 'custom';
+                  const isSelected = selectedVariantIds.has(item.variant_id);
 
                   return (
-                    <tr key={`${item.product_id}-${item.variant_id}`} className="hover:bg-slate-50/80 transition-colors">
+                    <tr 
+                      key={`${item.product_id}-${item.variant_id}`} 
+                      className={`hover:bg-slate-50/80 transition-colors ${isSelected ? 'bg-red-50/40' : ''}`}
+                    >
+                      {/* Checkbox de Selección */}
+                      <td className="py-3 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectVariant(item.variant_id)}
+                          className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500 cursor-pointer"
+                        />
+                      </td>
+
                       {/* Número de fila */}
-                      <td className="py-3 px-4 text-center text-slate-400 font-mono text-[10px]">
+                      <td className="py-3 px-2 text-center text-slate-400 font-mono text-[10px]">
                         {rowNumber}
                       </td>
 
@@ -860,6 +979,249 @@ export default function TiendaNubeCatalog({
                 className="px-5 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200"
               >
                 Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BARRA FLOTANTE DE ACCIONES EN LOTE */}
+      {selectedCount > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 text-white backdrop-blur-md px-6 py-3.5 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-5 text-xs animate-in slide-in-from-bottom-5 duration-200">
+          <div className="flex items-center gap-3 pr-4 border-r border-slate-700/80">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-red-600 text-white font-bold flex items-center justify-center text-[11px] shadow-sm">
+                {selectedCount}
+              </span>
+              <span className="font-semibold text-slate-200">
+                {selectedCount === 1 ? '1 variante seleccionada' : `${selectedCount} variantes seleccionadas`}
+              </span>
+            </div>
+
+            {selectedCount < sortedVariants.length && (
+              <button
+                onClick={selectAllFiltered}
+                className="text-slate-400 hover:text-white underline text-[11px] cursor-pointer"
+              >
+                Seleccionar todas ({sortedVariants.length})
+              </button>
+            )}
+
+            <button
+              onClick={clearSelection}
+              className="text-slate-400 hover:text-red-400 text-[11px] cursor-pointer ml-1"
+            >
+              Deseleccionar
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            {/* Botón Descuento en Lote */}
+            <button
+              onClick={() => setBatchDiscountModalOpen(true)}
+              disabled={batchProcessing}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all shadow-md shadow-amber-900/30 cursor-pointer disabled:opacity-50"
+            >
+              <Percent className="w-3.5 h-3.5" />
+              <span>🎯 Descuento en Lote</span>
+            </button>
+
+            {/* Botón Modificar Precios en Lote */}
+            <button
+              onClick={() => setBatchPriceModalOpen(true)}
+              disabled={batchProcessing}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-red-600 hover:bg-red-700 text-white transition-all shadow-md shadow-red-900/30 cursor-pointer disabled:opacity-50"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>💲 Modificar Precios</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE DESCUENTO EN LOTE */}
+      {batchDiscountModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <div className="flex items-center gap-2 text-amber-600 font-bold text-xs uppercase tracking-wider mb-0.5">
+                  <Percent className="w-4 h-4" />
+                  <span>Acción en Lote</span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Descuento para {selectedCount} variantes
+                </h3>
+              </div>
+              <button 
+                onClick={() => setBatchDiscountModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <label className="block font-semibold text-slate-700">Elige la acción a aplicar:</label>
+
+              <div className="space-y-2">
+                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                  batchDiscountMode === 'custom' ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <input
+                    type="radio"
+                    name="batchDiscountMode"
+                    value="custom"
+                    checked={batchDiscountMode === 'custom'}
+                    onChange={(e) => setBatchDiscountMode(e.target.value)}
+                    className="mt-0.5 text-amber-600 focus:ring-amber-500"
+                  />
+                  <div className="flex-1">
+                    <span className="font-bold text-slate-900 block">Fijar porcentaje de descuento personalizado</span>
+                    <span className="text-slate-500 text-[11px] block mt-0.5">Sobreescribe el descuento de categoría por este valor discrecional.</span>
+                    {batchDiscountMode === 'custom' && (
+                      <div className="mt-2.5 flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={batchDiscountPct}
+                            onChange={(e) => setBatchDiscountPct(e.target.value)}
+                            className="w-full bg-white text-slate-900 font-mono font-bold px-3 py-2 rounded-xl border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500 pr-7 text-xs"
+                            placeholder="Ej: 15.0"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">%</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </label>
+
+                <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                  batchDiscountMode === 'reset' ? 'bg-amber-50/70 border-amber-300' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <input
+                    type="radio"
+                    name="batchDiscountMode"
+                    value="reset"
+                    checked={batchDiscountMode === 'reset'}
+                    onChange={(e) => setBatchDiscountMode(e.target.value)}
+                    className="mt-0.5 text-amber-600 focus:ring-amber-500"
+                  />
+                  <div>
+                    <span className="font-bold text-slate-900 block">Restablecer a descuento de categoría</span>
+                    <span className="text-slate-500 text-[11px] block mt-0.5">Elimina las sobreescrituras y vuelve a heredar la regla de categoría/subcategoría.</span>
+                  </div>
+                </label>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500">
+                💡 <strong className="text-slate-700">Nota:</strong> Se recalcularán los precios según el costo ERP de cada variante y se impactarán inmediatamente en Tiendanube y en la base local.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setBatchDiscountModalOpen(false)}
+                disabled={batchProcessing}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleExecuteBatchDiscount}
+                disabled={batchProcessing || (batchDiscountMode === 'custom' && batchDiscountPct === '')}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md shadow-amber-200 disabled:opacity-50 cursor-pointer"
+              >
+                {batchProcessing && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                <span>{batchProcessing ? 'Aplicando...' : `Aplicar a ${selectedCount} variantes`}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE PRECIOS EN LOTE */}
+      {batchPriceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+              <div>
+                <div className="flex items-center gap-2 text-red-600 font-bold text-xs uppercase tracking-wider mb-0.5">
+                  <Sliders className="w-4 h-4" />
+                  <span>Acción en Lote</span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Modificar Precios para {selectedCount} variantes
+                </h3>
+              </div>
+              <button 
+                onClick={() => setBatchPriceModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1.5">Tipo de ajuste de precio:</label>
+                <select
+                  value={batchPriceMode}
+                  onChange={(e) => setBatchPriceMode(e.target.value)}
+                  className="w-full bg-slate-50 text-slate-800 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 font-medium"
+                >
+                  <option value="percentage_adjust">📈 Ajustar precio actual por porcentaje (+% / -%)</option>
+                  <option value="discount_on_price">🏷️ Aplicar descuento porcentual sobre precio (-%)</option>
+                  <option value="fixed_price">💲 Fijar precio de lista fijo ($)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  {batchPriceMode === 'fixed_price' ? 'Precio fijo en pesos ($):' : 'Porcentaje de ajuste (%):'}
+                </label>
+                <div className="relative">
+                  {batchPriceMode === 'fixed_price' && (
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">$</span>
+                  )}
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={batchPriceValue}
+                    onChange={(e) => setBatchPriceValue(e.target.value)}
+                    className={`w-full bg-slate-50 text-slate-900 font-mono font-bold text-sm py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none ${
+                      batchPriceMode === 'fixed_price' ? 'pl-8 pr-4' : 'px-3.5 pr-8'
+                    }`}
+                    placeholder={batchPriceMode === 'fixed_price' ? '15000.00' : '10'}
+                  />
+                  {batchPriceMode !== 'fixed_price' && (
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">%</span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  {batchPriceMode === 'percentage_adjust' && 'Ejemplo: 10 aumenta un 10%, -5 reduce un 5% sobre el precio de lista actual.'}
+                  {batchPriceMode === 'discount_on_price' && 'Ejemplo: 20 aplica un 20% de descuento directo sobre el precio de lista actual.'}
+                  {batchPriceMode === 'fixed_price' && 'Ejemplo: 25000 fija el precio exacto de lista en $25.000,00 para todas las variantes seleccionadas.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setBatchPriceModalOpen(false)}
+                disabled={batchProcessing}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleExecuteBatchPrice}
+                disabled={batchProcessing || batchPriceValue === '' || isNaN(parseFloat(batchPriceValue))}
+                className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200 disabled:opacity-50 cursor-pointer"
+              >
+                {batchProcessing && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                <span>{batchProcessing ? 'Actualizando...' : `Actualizar ${selectedCount} variantes`}</span>
               </button>
             </div>
           </div>

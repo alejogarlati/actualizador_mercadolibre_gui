@@ -228,6 +228,23 @@ export const saveTiendanubeVariantOverride = async (variantId, data) => {
   return res.data;
 };
 
+export const batchUpdateTiendanubeVariantOverrides = async (items, customDiscountPct) => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/variants/batch-override`, {
+    items: items,
+    custom_discount_pct: customDiscountPct
+  });
+  return res.data;
+};
+
+export const batchUpdateTiendanubeVariantPrices = async (items, mode, value) => {
+  const res = await axios.post(`${API_BASE_URL}/tiendanube/variants/batch-price`, {
+    items: items,
+    mode: mode,
+    value: value
+  });
+  return res.data;
+};
+
 export const fetchTiendanubeCategoriesTree = async () => {
   try {
     const res = await axios.get(`${API_BASE_URL}/tiendanube/categories/tree`);

@@ -64,6 +64,8 @@ import {
   fetchTiendanubeItems,
   fetchTiendanubeVariants,
   saveTiendanubeVariantOverride,
+  batchUpdateTiendanubeVariantOverrides,
+  batchUpdateTiendanubeVariantPrices,
   fetchTiendanubeCategoriesTree,
   refreshTiendanubeCategories,
   saveTiendanubeCategoryDiscount,
@@ -355,6 +357,38 @@ export default function App() {
       await loadTiendanubeData();
     } catch (err) {
       addToast('error', 'Error en corrección por lote', err.response?.data?.detail || err.message);
+    }
+  };
+
+  const handleBatchUpdateOverrides = async (items, customDiscountPct) => {
+    try {
+      const res = await batchUpdateTiendanubeVariantOverrides(items, customDiscountPct);
+      addToast(
+        'success',
+        'Descuentos en Lote Actualizados',
+        res?.message || `Se aplicó el factor de descuento a ${items.length} variantes.`
+      );
+      await loadTiendanubeData();
+      return res;
+    } catch (err) {
+      addToast('error', 'Error al actualizar descuentos en lote', err.response?.data?.detail || err.message);
+      throw err;
+    }
+  };
+
+  const handleBatchUpdatePrices = async (items, mode, value) => {
+    try {
+      const res = await batchUpdateTiendanubeVariantPrices(items, mode, value);
+      addToast(
+        'success',
+        'Precios en Lote Actualizados',
+        res?.message || `Se actualizaron los precios de ${items.length} variantes en Tiendanube.`
+      );
+      await loadTiendanubeData();
+      return res;
+    } catch (err) {
+      addToast('error', 'Error al actualizar precios en lote', err.response?.data?.detail || err.message);
+      throw err;
     }
   };
 
@@ -1100,6 +1134,8 @@ export default function App() {
                 onDelete={handleDeleteTiendanubeProduct}
                 onQuickUpdate={handleQuickUpdateTiendanube}
                 onSaveVariantOverride={handleSaveVariantOverride}
+                onBatchUpdateOverrides={handleBatchUpdateOverrides}
+                onBatchUpdatePrices={handleBatchUpdatePrices}
               />
             )}
 
