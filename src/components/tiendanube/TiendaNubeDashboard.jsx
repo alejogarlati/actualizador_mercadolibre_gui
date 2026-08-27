@@ -111,11 +111,11 @@ export default function TiendaNubeDashboard({
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between gap-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sin Stock (Agotados)</span>
-            <div className={`p-2 rounded-xl ${metrics?.out_of_stock > 0 ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-400'}`}>
+            <div className={`p-2 rounded-xl ${metrics?.out_of_stock > 0 ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-400'}`}>
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
-          <span className={`text-2xl font-black font-mono ${metrics?.out_of_stock > 0 ? 'text-amber-600' : 'text-slate-700'}`}>
+          <span className={`text-2xl font-black font-mono ${metrics?.out_of_stock > 0 ? 'text-red-600' : 'text-slate-700'}`}>
             {metrics?.out_of_stock || 0}
           </span>
           <p className="text-xs text-slate-500">Requieren reposición</p>

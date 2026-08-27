@@ -223,7 +223,7 @@ export default function TiendaNubeSyncModal({ isOpen, onClose, onSyncFinished })
                   <div className="text-[11px] text-slate-500 font-medium">Actualizados</div>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
-                  <div className="text-amber-600 font-mono font-black text-base">{progress.not_found_count || 0}</div>
+                  <div className="text-slate-700 font-mono font-black text-base">{progress.not_found_count || 0}</div>
                   <div className="text-[11px] text-slate-500 font-medium">No Encontrados</div>
                 </div>
                 <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
@@ -246,7 +246,7 @@ export default function TiendaNubeSyncModal({ isOpen, onClose, onSyncFinished })
                   <div key={idx} className={
                     log.includes('[OK]') ? 'text-emerald-400' : 
                     log.includes('[FALLO]') || log.includes('[ERROR]') ? 'text-red-400 font-bold' : 
-                    log.includes('[NO ENCONTRADO]') ? 'text-amber-400' : 'text-slate-300'
+                    log.includes('[NO ENCONTRADO]') ? 'text-slate-400' : 'text-slate-300'
                   }>
                     {log}
                   </div>

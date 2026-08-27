@@ -486,7 +486,7 @@ export default function TiendaNubeAuditView({
                       <td className="py-3 px-4 text-center">
                         <span className={`px-2 py-0.5 rounded-md font-mono text-[11px] font-bold border ${
                           item.discount_origin === 'custom' 
-                            ? 'bg-amber-50 text-amber-800 border-amber-300' 
+                            ? 'bg-red-50 text-red-700 border-red-200' 
                             : 'bg-slate-100 text-slate-700 border-slate-200'
                         }`}>
                           {item.applied_discount_pct > 0 ? `-${item.applied_discount_pct}%` : `${item.applied_discount_pct}%`}

@@ -43,7 +43,8 @@ import {
   Tag,
   Folder,
   ArrowLeft,
-  ShoppingBag
+  ShoppingBag,
+  LogOut
 } from 'lucide-react';
 import { 
   checkHealth, 
@@ -59,7 +60,6 @@ import {
   fetchAppSettings,
   saveAppSettings,
   fetchAuditReport,
-  fetchLogs,
   checkTiendanubeHealth,
   fetchTiendanubeMetrics,
   fetchTiendanubeItems,
@@ -245,19 +245,6 @@ export default function App() {
   const [auditLastUpdated, setAuditLastUpdated] = useState(() => localStorage.getItem('meli_audit_last_updated') || null);
 
   const [healthRefreshing, setHealthRefreshing] = useState(false);
-  const [backendLogs, setBackendLogs] = useState([]);
-  const [cliExpanded, setCliExpanded] = useState(true);
-
-  // Polling de logs del backend
-  useEffect(() => {
-    const loadLogs = async () => {
-      const logs = await fetchLogs(40);
-      setBackendLogs(logs);
-    };
-    loadLogs();
-    const interval = setInterval(loadLogs, 3000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Polling del progreso de sincronización
   useEffect(() => {
@@ -773,14 +760,14 @@ export default function App() {
             className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-lg border text-sm animate-in slide-in-from-top-2 duration-200 ${
               toast.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' :
               toast.type === 'error' ? 'bg-red-50 border-red-200 text-red-900' :
-              toast.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-900' :
+              toast.type === 'warning' ? 'bg-slate-900 border-slate-800 text-white' :
               'bg-slate-50 border-slate-200 text-slate-900'
             }`}
           >
             <div className="mt-0.5 shrink-0">
               {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
               {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-red-600" />}
-              {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-600" />}
+              {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-red-400" />}
               {toast.type === 'info' && <Info className="w-5 h-5 text-slate-600" />}
             </div>
             <div className="flex-1 min-w-0">
@@ -977,38 +964,29 @@ export default function App() {
           </nav>
         </div>
 
-        {/* WIDGET MINI CLI LOGS */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-inner flex flex-col">
-          <div className="flex items-center justify-between px-3 py-2 bg-slate-950/80 border-b border-slate-800 text-[11px] font-bold text-slate-400">
-            <div className="flex items-center gap-1.5 text-slate-300">
-              <Terminal className="w-3.5 h-3.5 text-red-500" />
-              <span>Backend Logs</span>
-            </div>
-            <button 
-              onClick={() => setCliExpanded(!cliExpanded)}
-              className="text-slate-500 hover:text-slate-300 p-0.5"
-              title={cliExpanded ? "Minimizar" : "Expandir"}
-            >
-              {cliExpanded ? "_" : "□"}
-            </button>
-          </div>
+        {/* ACCIONES DEL PIE DE BARRA LATERAL */}
+        <div className="pt-4 border-t border-slate-200/80 flex items-center justify-between gap-2">
+          <button
+            onClick={() => {
+              if (selectedPlatform === 'tiendanube') {
+                setSelectedPlatform('mercadolibre');
+              }
+              setActiveTab('rules');
+            }}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+            title="Abrir Configuración General"
+          >
+            <SettingsIcon className="w-4 h-4 text-slate-600" />
+            <span>Configuración</span>
+          </button>
 
-          {cliExpanded && (
-            <div className="h-36 p-2 overflow-y-auto font-mono text-[10px] flex flex-col gap-1 bg-slate-950/80">
-              {backendLogs.length === 0 ? (
-                <div className="text-slate-600 italic">Esperando logs del backend...</div>
-              ) : (
-                backendLogs.map((log, idx) => (
-                  <div key={idx} className={`leading-relaxed break-all ${
-                    log.includes('ERROR') ? 'text-red-400' :
-                    log.includes('OK') ? 'text-emerald-400' : 'text-slate-300'
-                  }`}>
-                    {log}
-                  </div>
-                ))
-              )}
-            </div>
-          )}
+          <button
+            onClick={() => setSelectedPlatform(null)}
+            className="p-2.5 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition-all border border-slate-200 hover:border-red-200 shrink-0"
+            title="Cambiar de plataforma / Salir"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </aside>
 
@@ -1041,8 +1019,8 @@ export default function App() {
             </p>
           </div>
 
-          {/* BADGES DE CONEXIÓN & ACCIÓN DE CAMBIAR CANAL */}
-          <div className="flex items-center gap-3 self-end md:self-auto">
+          {/* BADGES DE CONEXIÓN & ACCIONES RÁPIDAS (CONFIGURACIÓN Y SALIR) */}
+          <div className="flex items-center gap-2.5 self-end md:self-auto">
             {/* Badges de Conexión según Plataforma */}
             {selectedPlatform === 'tiendanube' ? (
               <div className="flex items-center gap-2">
@@ -1058,7 +1036,7 @@ export default function App() {
                 <button
                   onClick={loadTiendanubeData}
                   disabled={tnLoading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition-colors disabled:opacity-50"
                   title="Recomprobar conexión a Tiendanube"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${tnLoading ? 'animate-spin text-red-600' : ''}`} />
@@ -1079,7 +1057,7 @@ export default function App() {
                 <button
                   onClick={loadHealthAndStats}
                   disabled={healthRefreshing}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs transition-colors disabled:opacity-50"
                   title="Recomprobar conexión"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${healthRefreshing ? 'spinning' : ''}`} />
@@ -1088,13 +1066,28 @@ export default function App() {
               </div>
             )}
 
+            {/* Botón de Configuración */}
+            <button
+              onClick={() => {
+                if (selectedPlatform === 'tiendanube') {
+                  setSelectedPlatform('mercadolibre');
+                }
+                setActiveTab('rules');
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-xs transition-all"
+              title="Configuración del Sistema"
+            >
+              <SettingsIcon className="w-3.5 h-3.5 text-slate-600" />
+              <span className="hidden sm:inline">Configuración</span>
+            </button>
+
+            {/* Solo Icono de Salir */}
             <button
               onClick={() => setSelectedPlatform(null)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white hover:bg-red-50 text-slate-700 hover:text-red-600 border border-slate-200 hover:border-red-200 shadow-sm transition-all"
-              title="Volver a la selección de plataforma"
+              className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 hover:border-red-200 transition-all shadow-xs"
+              title="Cambiar de plataforma / Salir"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Cambiar Canal</span>
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </header>
@@ -1180,17 +1173,17 @@ export default function App() {
 
         {/* BANNER SI ESTÁ OFFLINE EN MERCADO LIBRE */}
         {selectedPlatform === 'mercadolibre' && !health.token_valid && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-4 text-amber-900 shadow-sm">
-            <div className="p-2 bg-amber-100 text-amber-700 rounded-xl">
-              <AlertTriangle className="w-5 h-5" />
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-4 text-red-900 shadow-sm">
+            <div className="p-2 bg-red-100 text-red-700 rounded-xl">
+              <AlertCircle className="w-5 h-5" />
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-sm">Atención: Token o Backend Desconectado</h4>
-              <p className="text-xs text-amber-800 mt-0.5">La sesión de Mercado Libre requiere reconexión o renovación de credenciales en el backend.</p>
+              <p className="text-xs text-red-800 mt-0.5">La sesión de Mercado Libre requiere reconexión o renovación de credenciales en el backend.</p>
             </div>
             <button 
               onClick={loadHealthAndStats}
-              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-semibold transition-colors"
+              className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold transition-colors"
             >
               Reintentar Conexión
             </button>
@@ -1231,7 +1224,7 @@ export default function App() {
               <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between gap-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Publicaciones Activas</span>
-                  <PackageSearch className="w-4 h-4 text-blue-600" />
+                  <PackageSearch className="w-4 h-4 text-slate-700" />
                 </div>
                 <span className="text-xl font-black text-slate-900">
                   {analyticsData?.total_active_listings ?? stats?.publicaciones_activas ?? '---'}
@@ -1288,7 +1281,7 @@ export default function App() {
                   <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl">
                     <span className="text-[11px] font-semibold text-slate-500 block">Envíos con Demora</span>
                     <span className={`text-2xl font-black mt-1 block ${
-                      (analyticsData?.delayed_handling_rate ?? 0) <= 15.0 ? 'text-emerald-600' : 'text-amber-600'
+                      (analyticsData?.delayed_handling_rate ?? 0) <= 15.0 ? 'text-emerald-600' : 'text-slate-700'
                     }`}>
                       {analyticsData?.delayed_handling_rate ?? 0.0}%
                     </span>
@@ -1314,10 +1307,10 @@ export default function App() {
               <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <AlertTriangle className="w-4 h-4 text-slate-600" />
                     <span>Alertas Operativas</span>
                   </div>
-                  <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold">
+                  <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full font-bold">
                     {analyticsData?.alerts_count ?? 0}
                   </span>
                 </div>
@@ -1334,8 +1327,7 @@ export default function App() {
                         key={idx} 
                         className={`p-3.5 rounded-xl border text-xs flex flex-col gap-1 ${
                           al.type === 'danger' ? 'bg-red-50 border-red-200 text-red-900' :
-                          al.type === 'warning' ? 'bg-amber-50 border-amber-200 text-amber-900' :
-                          'bg-blue-50 border-blue-200 text-blue-900'
+                          'bg-slate-50 border-slate-200 text-slate-900'
                         }`}
                       >
                         <span className="font-bold">{al.title}</span>
@@ -1812,10 +1804,10 @@ export default function App() {
 
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] font-bold text-amber-600 uppercase tracking-wider block">Margen Alto ERP</span>
-                    <span className="text-xl font-black text-amber-600">{dynamicAuditCounts.recibe_mas}</span>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">Margen Alto ERP</span>
+                    <span className="text-xl font-black text-slate-800">{dynamicAuditCounts.recibe_mas}</span>
                   </div>
-                  <div className="p-2.5 bg-amber-50 text-amber-600 rounded-xl border border-amber-100">
+                  <div className="p-2.5 bg-slate-100 text-slate-600 rounded-xl border border-slate-200">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                 </div>
@@ -1880,7 +1872,6 @@ export default function App() {
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                               item.status_evaluacion === 'OK' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                               item.status_evaluacion === 'BAJO' ? 'bg-red-50 text-red-700 border border-red-200' :
-                              item.status_evaluacion === 'ALTO' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
                               'bg-slate-100 text-slate-600 border border-slate-200'
                             }`}>
                               {item.status_evaluacion}
@@ -2385,13 +2376,11 @@ export default function App() {
                   <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                     inspectingAuditItem.status_evaluacion === 'OK' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
                     inspectingAuditItem.status_evaluacion === 'BAJO' ? 'bg-red-50 text-red-700 border border-red-200' :
-                    inspectingAuditItem.status_evaluacion === 'ALTO' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
                     'bg-slate-100 text-slate-600 border border-slate-200'
                   }`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${
                       inspectingAuditItem.status_evaluacion === 'OK' ? 'bg-emerald-500' :
-                      inspectingAuditItem.status_evaluacion === 'BAJO' ? 'bg-red-500' :
-                      inspectingAuditItem.status_evaluacion === 'ALTO' ? 'bg-amber-500' : 'bg-slate-400'
+                      inspectingAuditItem.status_evaluacion === 'BAJO' ? 'bg-red-500' : 'bg-slate-400'
                     }`} />
                     <span>
                       {inspectingAuditItem.status_evaluacion === 'OK' ? 'En Rango Rentable' :
@@ -2432,7 +2421,7 @@ export default function App() {
                 {/* COMISION DE VENTA */}
                 <div className="p-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                    <div className="p-1.5 bg-slate-100 text-slate-700 rounded-lg">
                       <DollarSign className="w-4 h-4" />
                     </div>
                     <div>
@@ -2446,7 +2435,7 @@ export default function App() {
                 {/* COSTO DE ENVIO GRATIS */}
                 <div className="p-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
+                    <div className="p-1.5 bg-slate-100 text-slate-700 rounded-lg">
                       <Truck className="w-4 h-4" />
                     </div>
                     <div>
@@ -2460,7 +2449,7 @@ export default function App() {
                 {/* RETENCIONES IMPOSITIVAS ESTIMADAS */}
                 <div className="p-3.5 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
                   <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 bg-purple-50 text-purple-600 rounded-lg">
+                    <div className="p-1.5 bg-slate-100 text-slate-700 rounded-lg">
                       <ShieldCheck className="w-4 h-4" />
                     </div>
                     <div>
