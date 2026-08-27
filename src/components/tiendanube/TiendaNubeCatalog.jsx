@@ -987,13 +987,13 @@ export default function TiendaNubeCatalog({
 
       {/* BARRA FLOTANTE DE ACCIONES EN LOTE */}
       {selectedCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 text-white backdrop-blur-md px-6 py-3.5 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-5 text-xs animate-in slide-in-from-bottom-5 duration-200">
-          <div className="flex items-center gap-3 pr-4 border-r border-slate-700/80">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-red-600 text-white shadow-2xl shadow-red-950/40 px-6 py-3.5 rounded-2xl border border-red-500/80 flex items-center gap-5 text-xs animate-in slide-in-from-bottom-5 duration-200">
+          <div className="flex items-center gap-3 pr-4 border-r border-red-400/60">
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-red-600 text-white font-bold flex items-center justify-center text-[11px] shadow-sm">
+              <span className="w-6 h-6 rounded-full bg-white text-red-600 font-black flex items-center justify-center text-[11px] shadow-sm">
                 {selectedCount}
               </span>
-              <span className="font-semibold text-slate-200">
+              <span className="font-bold text-white">
                 {selectedCount === 1 ? '1 variante seleccionada' : `${selectedCount} variantes seleccionadas`}
               </span>
             </div>
@@ -1001,7 +1001,7 @@ export default function TiendaNubeCatalog({
             {selectedCount < sortedVariants.length && (
               <button
                 onClick={selectAllFiltered}
-                className="text-slate-400 hover:text-white underline text-[11px] cursor-pointer"
+                className="text-white/80 hover:text-white underline text-[11px] cursor-pointer"
               >
                 Seleccionar todas ({sortedVariants.length})
               </button>
@@ -1009,7 +1009,7 @@ export default function TiendaNubeCatalog({
 
             <button
               onClick={clearSelection}
-              className="text-slate-400 hover:text-red-400 text-[11px] cursor-pointer ml-1"
+              className="text-white/80 hover:text-white text-[11px] font-medium cursor-pointer ml-1 hover:underline"
             >
               Deseleccionar
             </button>
@@ -1020,7 +1020,7 @@ export default function TiendaNubeCatalog({
             <button
               onClick={() => setBatchDiscountModalOpen(true)}
               disabled={batchProcessing}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 transition-all shadow-md shadow-amber-900/30 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-white hover:bg-red-50 text-red-700 transition-all shadow-md shadow-red-950/20 cursor-pointer disabled:opacity-50"
             >
               <Percent className="w-3.5 h-3.5" />
               <span>🎯 Descuento en Lote</span>
@@ -1030,9 +1030,9 @@ export default function TiendaNubeCatalog({
             <button
               onClick={() => setBatchPriceModalOpen(true)}
               disabled={batchProcessing}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-red-600 hover:bg-red-700 text-white transition-all shadow-md shadow-red-900/30 cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold bg-white/15 hover:bg-white/25 text-white border border-white/40 transition-all shadow-sm cursor-pointer disabled:opacity-50"
             >
-              <Sliders className="w-3.5 h-3.5" />
+              <Sliders className="w-3.5 h-3.5 text-white" />
               <span>💲 Modificar Precios</span>
             </button>
           </div>

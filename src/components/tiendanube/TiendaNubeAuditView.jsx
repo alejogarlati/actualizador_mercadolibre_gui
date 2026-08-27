@@ -615,13 +615,13 @@ export default function TiendaNubeAuditView({
 
       {/* BARRA FLOTANTE DE ACCIONES EN LOTE */}
       {selectedCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 text-white backdrop-blur-md px-6 py-3.5 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-5 transition-all animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex items-center gap-2">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-red-600 text-white shadow-2xl shadow-red-950/40 px-6 py-3.5 rounded-2xl border border-red-500/80 flex items-center gap-5 transition-all animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-2 pr-4 border-r border-red-400/60">
             <span className="flex h-3 w-3 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
             </span>
-            <span className="text-xs font-bold font-mono">
+            <span className="text-xs font-bold font-mono text-white">
               {selectedCount} {selectedCount === 1 ? 'variante seleccionada' : 'variantes seleccionadas'}
             </span>
           </div>
@@ -630,12 +630,12 @@ export default function TiendaNubeAuditView({
             <button
               onClick={handleExecuteBatchFix}
               disabled={isBatchFixing}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-md shadow-red-900/40 transition-all disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-white hover:bg-red-50 text-red-700 shadow-md shadow-red-950/20 transition-all disabled:opacity-50 cursor-pointer"
             >
               {isBatchFixing ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-red-600" />
               ) : (
-                <Zap className="w-3.5 h-3.5 fill-white" />
+                <Zap className="w-3.5 h-3.5 fill-red-600 text-red-600" />
               )}
               <span>{isBatchFixing ? 'Aplicando correcciones...' : `Corregir ${selectedCount} productos`}</span>
             </button>
@@ -643,7 +643,7 @@ export default function TiendaNubeAuditView({
             <button
               onClick={handleClearSelection}
               disabled={isBatchFixing}
-              className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+              className="px-3 py-2 rounded-xl text-xs font-semibold text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             >
               Deseleccionar
             </button>
