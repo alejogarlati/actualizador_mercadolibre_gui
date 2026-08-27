@@ -18,7 +18,12 @@ import {
   Sliders,
   Percent,
   Layers,
-  ArrowRight
+  ArrowRight,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  RotateCcw,
+  X
 } from 'lucide-react';
 
 export default function TiendaNubeCatalog({ 
@@ -36,6 +41,12 @@ export default function TiendaNubeCatalog({
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [discountFilter, setDiscountFilter] = useState('all'); // 'all', 'custom', 'category'
+  const [stockFilter, setStockFilter] = useState('all'); // 'all', 'in_stock', 'out_of_stock'
+  const [costFilter, setCostFilter] = useState('all'); // 'all', 'with_cost', 'no_cost'
+
+  // Ordenamiento por columna
+  const [sortBy, setSortBy] = useState('product_name'); // 'product_name', 'sku', 'category_name', 'cost', 'applied_discount_pct', 'price', 'stock', 'status'
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,6 +61,28 @@ export default function TiendaNubeCatalog({
   // Variant discount override modal state
   const [overrideItem, setOverrideItem] = useState(null);
   const [overridePct, setOverridePct] = useState('');
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder(['cost', 'price', 'applied_discount_pct', 'stock'].includes(column) ? 'desc' : 'asc');
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setCategoryFilter('all');
+    setDiscountFilter('all');
+    setStockFilter('all');
+    setCostFilter('all');
+    setSortBy('product_name');
+    setSortOrder('asc');
+  };
+
+  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all' || categoryFilter !== 'all' || discountFilter !== 'all' || stockFilter !== 'all' || costFilter !== 'all';
 
   const openQuickEdit = (item) => {
     setQuickEditItem(item);
@@ -85,14 +118,17 @@ export default function TiendaNubeCatalog({
     setOverrideItem(null);
   };
 
-  // Filtrado de variantes
+  // 1. Filtrado de variantes
   const filteredVariants = useMemo(() => {
     return (variants || []).filter(item => {
       const matchSearch = 
+        !searchTerm ||
         item.display_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.variant_str?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         String(item.product_id).includes(searchTerm) ||
         String(item.variant_id).includes(searchTerm);
 
@@ -110,27 +146,78 @@ export default function TiendaNubeCatalog({
         (discountFilter === 'custom' && item.discount_origin === 'custom') ||
         (discountFilter === 'category' && item.discount_origin === 'category');
 
-      return matchSearch && matchStatus && matchCat && matchDiscount;
-    });
-  }, [variants, searchTerm, statusFilter, categoryFilter, discountFilter]);
+      const matchStock =
+        stockFilter === 'all' ||
+        (stockFilter === 'in_stock' && (item.stock === null || item.stock > 0)) ||
+        (stockFilter === 'out_of_stock' && item.stock !== null && item.stock <= 0);
 
-  // Reset page when filters change
+      const matchCost =
+        costFilter === 'all' ||
+        (costFilter === 'with_cost' && item.cost !== null && item.cost !== undefined && item.cost > 0) ||
+        (costFilter === 'no_cost' && (!item.cost || item.cost <= 0));
+
+      return matchSearch && matchStatus && matchCat && matchDiscount && matchStock && matchCost;
+    });
+  }, [variants, searchTerm, statusFilter, categoryFilter, discountFilter, stockFilter, costFilter]);
+
+  // 2. Ordenamiento multicriterio
+  const sortedVariants = useMemo(() => {
+    return [...filteredVariants].sort((a, b) => {
+      let valA = a[sortBy];
+      let valB = b[sortBy];
+
+      if (sortBy === 'product_name') {
+        valA = a.product_name || a.display_title || '';
+        valB = b.product_name || b.display_title || '';
+      } else if (sortBy === 'sku') {
+        valA = a.sku || '';
+        valB = b.sku || '';
+      } else if (sortBy === 'category_name') {
+        valA = a.category_name || '';
+        valB = b.category_name || '';
+      } else if (sortBy === 'cost') {
+        valA = a.cost || 0;
+        valB = b.cost || 0;
+      } else if (sortBy === 'applied_discount_pct') {
+        valA = a.applied_discount_pct !== undefined ? a.applied_discount_pct : 0;
+        valB = b.applied_discount_pct !== undefined ? b.applied_discount_pct : 0;
+      } else if (sortBy === 'price') {
+        valA = a.price || 0;
+        valB = b.price || 0;
+      } else if (sortBy === 'stock') {
+        valA = a.stock !== null && a.stock !== undefined ? a.stock : 999999;
+        valB = b.stock !== null && b.stock !== undefined ? b.stock : 999999;
+      } else if (sortBy === 'status') {
+        valA = a.status || '';
+        valB = b.status || '';
+      }
+
+      if (typeof valA === 'string') {
+        return sortOrder === 'asc' 
+          ? valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' }) 
+          : valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+      }
+      return sortOrder === 'asc' ? (valA || 0) - (valB || 0) : (valB || 0) - (valA || 0);
+    });
+  }, [filteredVariants, sortBy, sortOrder]);
+
+  // Reset page when filters or sorting change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, categoryFilter, discountFilter, pageSize]);
+  }, [searchTerm, statusFilter, categoryFilter, discountFilter, stockFilter, costFilter, pageSize, sortBy, sortOrder]);
 
   // Cálculos de Paginación
-  const effectivePageSize = pageSize === 'all' ? filteredVariants.length || 1 : pageSize;
-  const totalPages = Math.max(1, Math.ceil(filteredVariants.length / effectivePageSize));
+  const effectivePageSize = pageSize === 'all' ? sortedVariants.length || 1 : pageSize;
+  const totalPages = Math.max(1, Math.ceil(sortedVariants.length / effectivePageSize));
   
   const paginatedVariants = useMemo(() => {
-    if (pageSize === 'all') return filteredVariants;
+    if (pageSize === 'all') return sortedVariants;
     const start = (currentPage - 1) * pageSize;
-    return filteredVariants.slice(start, start + pageSize);
-  }, [filteredVariants, currentPage, pageSize]);
+    return sortedVariants.slice(start, start + pageSize);
+  }, [sortedVariants, currentPage, pageSize]);
 
-  const startIdx = filteredVariants.length === 0 ? 0 : (currentPage - 1) * effectivePageSize + 1;
-  const endIdx = pageSize === 'all' ? filteredVariants.length : Math.min(currentPage * pageSize, filteredVariants.length);
+  const startIdx = sortedVariants.length === 0 ? 0 : (currentPage - 1) * effectivePageSize + 1;
+  const endIdx = pageSize === 'all' ? sortedVariants.length : Math.min(currentPage * pageSize, sortedVariants.length);
 
   const getPageNumbers = () => {
     const pages = [];
@@ -149,92 +236,140 @@ export default function TiendaNubeCatalog({
     return pages;
   };
 
+  const renderSortIndicator = (column) => {
+    if (sortBy === column) {
+      return sortOrder === 'asc' ? (
+        <ArrowUp className="w-3.5 h-3.5 text-red-600 inline ml-1 shrink-0" />
+      ) : (
+        <ArrowDown className="w-3.5 h-3.5 text-red-600 inline ml-1 shrink-0" />
+      );
+    }
+    return (
+      <ArrowUpDown className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity inline ml-1 shrink-0" />
+    );
+  };
+
   return (
     <div className="flex flex-col gap-5">
       {/* Barra de Filtros, Búsqueda y Acciones */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        <div className="flex-1 flex flex-wrap items-center gap-3">
-          {/* Buscador */}
-          <div className="relative flex-1 min-w-[240px]">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Buscar variante por SKU, nombre, medida, marca o ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 text-slate-900 text-xs pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 focus:bg-white transition-colors"
-            />
-          </div>
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="flex-1 flex flex-wrap items-center gap-2.5">
+            {/* Buscador */}
+            <div className="relative flex-1 min-w-[240px]">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Buscar variante por SKU, nombre, medida, marca o ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-50 text-slate-900 text-xs pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 focus:bg-white transition-colors"
+              />
+            </div>
 
-          {/* Filtro por Categoría */}
-          {categories && categories.length > 0 && (
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 max-w-[200px] truncate"
-            >
-              <option value="all">Todas las categorías</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          )}
+            {/* Filtro por Categoría */}
+            {categories && categories.length > 0 && (
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 max-w-[190px] truncate font-medium"
+              >
+                <option value="all">Todas las categorías</option>
+                {categories.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+            )}
 
-          {/* Filtro por Tipo de Descuento */}
-          <div className="flex items-center gap-1.5">
-            <Percent className="w-3.5 h-3.5 text-slate-400" />
+            {/* Filtro por Tipo de Descuento */}
             <select
               value={discountFilter}
               onChange={(e) => setDiscountFilter(e.target.value)}
-              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500"
+              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 font-medium"
             >
               <option value="all">Todos los factores</option>
-              <option value="custom">🎯 Descuento Personalizado (Variante)</option>
-              <option value="category">📁 Descuento por Categoría</option>
+              <option value="custom">🎯 Descuento Manual</option>
+              <option value="category">📁 Descuento Categoría</option>
             </select>
-          </div>
 
-          {/* Filtro por Estado */}
-          <div className="flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            {/* Filtro por Stock */}
+            <select
+              value={stockFilter}
+              onChange={(e) => setStockFilter(e.target.value)}
+              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 font-medium"
+            >
+              <option value="all">Todo el stock</option>
+              <option value="in_stock">🟢 Con Stock</option>
+              <option value="out_of_stock">🔴 Sin Stock (Agotado)</option>
+            </select>
+
+            {/* Filtro por Costo ERP */}
+            <select
+              value={costFilter}
+              onChange={(e) => setCostFilter(e.target.value)}
+              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 font-medium"
+            >
+              <option value="all">Todos los costos</option>
+              <option value="with_cost">💲 Con Costo ERP</option>
+              <option value="no_cost">⚠️ Sin Costo ERP</option>
+            </select>
+
+            {/* Filtro por Estado */}
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500"
+              className="bg-slate-50 text-slate-700 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-red-500 font-medium"
             >
               <option value="all">Todos los estados</option>
-              <option value="active">Activos</option>
+              <option value="active">Publicados</option>
               <option value="hidden">Ocultos</option>
             </select>
+
+            {/* Botón limpiar filtros */}
+            {hasActiveFilters && (
+              <button
+                onClick={handleResetFilters}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors"
+                title="Restablecer todos los filtros"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Limpiar</span>
+              </button>
+            )}
           </div>
-        </div>
 
-        {/* Botones de Acción */}
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={onRefresh}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm transition-all disabled:opacity-50"
-            title="Refrescar catálogo desde la API de Tiendanube"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-red-600' : 'text-slate-500'}`} />
-            <span className="hidden sm:inline">Refrescar</span>
-          </button>
+          {/* Botones de Acción */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              onClick={onRefresh}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm transition-all disabled:opacity-50"
+              title="Refrescar catálogo desde la API de Tiendanube"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-red-600' : 'text-slate-500'}`} />
+              <span className="hidden sm:inline">Refrescar</span>
+            </button>
 
-          <button
-            onClick={onOpenCreate}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200 transition-all"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Producto</span>
-          </button>
+            <button
+              onClick={onOpenCreate}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200 transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Nuevo Producto</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Indicador de Resumen de Catálogo */}
       <div className="flex items-center justify-between text-xs text-slate-500 px-1">
         <div className="flex items-center gap-2">
-          <span>Mostrando <strong className="text-slate-800">{startIdx} - {endIdx}</strong> de <strong className="text-slate-800">{filteredVariants.length}</strong> variantes independientes</span>
+          <span>Mostrando <strong className="text-slate-800">{startIdx} - {endIdx}</strong> de <strong className="text-slate-800">{sortedVariants.length}</strong> variantes</span>
+          {sortBy && (
+            <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-md font-medium">
+              Orden: <strong className="text-slate-800 uppercase">{sortBy} ({sortOrder})</strong>
+            </span>
+          )}
         </div>
 
         {/* Selector de cantidad por página rápido */}
@@ -249,7 +384,7 @@ export default function TiendaNubeCatalog({
             <option value={25}>25</option>
             <option value={50}>50</option>
             <option value={100}>100</option>
-            <option value="all">Todos ({filteredVariants.length})</option>
+            <option value="all">Todos ({sortedVariants.length})</option>
           </select>
         </div>
       </div>
@@ -260,16 +395,80 @@ export default function TiendaNubeCatalog({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4 w-10 text-center">#</th>
-                <th className="py-3.5 px-4">Producto & Atributos de Variante</th>
-                <th className="py-3.5 px-4">SKU ERP</th>
-                <th className="py-3.5 px-4">Categoría / Sub-Cat</th>
-                <th className="py-3.5 px-4 text-right">Costo Mostrador</th>
-                <th className="py-3.5 px-4 text-center">Factor / Descuento</th>
-                <th className="py-3.5 px-4 text-right">Precio Tienda</th>
-                <th className="py-3.5 px-4 text-center">Stock</th>
-                <th className="py-3.5 px-4 text-center">Estado</th>
-                <th className="py-3.5 px-4 text-right">Acciones</th>
+                <th className="py-3.5 px-4 w-10 text-center select-none">#</th>
+                <th 
+                  onClick={() => handleSort('product_name')}
+                  className="py-3.5 px-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
+                >
+                  <div className="flex items-center gap-1">
+                    <span className={sortBy === 'product_name' ? 'text-red-700 font-bold' : 'text-slate-600'}>Producto & Atributos</span>
+                    {renderSortIndicator('product_name')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => handleSort('sku')}
+                  className="py-3.5 px-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
+                >
+                  <div className="flex items-center gap-1">
+                    <span className={sortBy === 'sku' ? 'text-red-700 font-bold' : 'text-slate-600'}>SKU ERP</span>
+                    {renderSortIndicator('sku')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => handleSort('category_name')}
+                  className="py-3.5 px-4 cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
+                >
+                  <div className="flex items-center gap-1">
+                    <span className={sortBy === 'category_name' ? 'text-red-700 font-bold' : 'text-slate-600'}>Categoría / Sub-Cat</span>
+                    {renderSortIndicator('category_name')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => handleSort('cost')}
+                  className="py-3.5 px-4 text-right cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span className={sortBy === 'cost' ? 'text-red-700 font-bold' : 'text-slate-600'}>Costo Mostrador</span>
+                    {renderSortIndicator('cost')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => handleSort('applied_discount_pct')}
+                  className="py-3.5 px-4 text-center cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span className={sortBy === 'applied_discount_pct' ? 'text-red-700 font-bold' : 'text-slate-600'}>Factor / Descuento</span>
+                    {renderSortIndicator('applied_discount_pct')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => handleSort('price')}
+                  className="py-3.5 px-4 text-right cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    <span className={sortBy === 'price' ? 'text-red-700 font-bold' : 'text-slate-600'}>Precio Tienda</span>
+                    {renderSortIndicator('price')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => handleSort('stock')}
+                  className="py-3.5 px-4 text-center cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span className={sortBy === 'stock' ? 'text-red-700 font-bold' : 'text-slate-600'}>Stock</span>
+                    {renderSortIndicator('stock')}
+                  </div>
+                </th>
+                <th 
+                  onClick={() => handleSort('status')}
+                  className="py-3.5 px-4 text-center cursor-pointer select-none hover:bg-slate-100/80 transition-colors group"
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span className={sortBy === 'status' ? 'text-red-700 font-bold' : 'text-slate-600'}>Estado</span>
+                    {renderSortIndicator('status')}
+                  </div>
+                </th>
+                <th className="py-3.5 px-4 text-right select-none">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-800">
