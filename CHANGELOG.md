@@ -7,6 +7,29 @@ y este proyecto se adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
 ---
 
+## [0.5.0] - 2026-09-02
+
+### 🎨 Rediseño Integral con Design System Anthropic, Unificación UI Multicanal, Modo Oscuro y Resiliencia
+- **🏛️ Sistema de Diseño Anthropic (`DESIGN.md`):**
+  - Adopción integral de la paleta cálida *Warm Light* (`#faf9f5`, `#141413`) y el modo *Obsidian Charcoal* (`#141413`, `#1c1c1a`, `#262624`).
+  - Conmutador interactivo de Tema (☀️ / 🌙) en Header, pie de Sidebar y Hub de Plataformas con persistencia en `localStorage`.
+  - Tipografía base refinada a 13px con interlineado 1.45 para legibilidad desktop superior.
+- **🧩 Unificación de Componentes Base (Mercado Libre ⚡ & Tiendanube 🛍️):**
+  - **Sidebar Colapsable:** Botón de repliegue/expansión persistido en memoria, navegación vertical compacta con tooltips y alineación limpia.
+  - **Vistas de Sincronización ERP Homogéneas:** Nueva vista `TiendaNubeSyncView.jsx` con idéntica arquitectura de 2 columnas que `MeliSyncView.jsx` (Carga y parámetros a la izquierda; barra de progreso, métricas en vivo y terminal de logs a la derecha).
+  - **Componentes UI Reutilizables:** `Toolbar`, `Table`, `Pagination`, `Modal`, `Badge`, `Button`, `KpiCard`, `Card`, `Tabs`, `Input`, `Select`, `Toast`.
+- **📐 Columnas de Tablas Redimensionables Interactivamente:**
+  - Control de arrastre horizontal (*drag-to-resize*) con anchos mínimos configurables en todas las tablas del sistema (`Table.jsx`).
+- **🎯 Acciones Masivas y Modales:**
+  - Isla flotante de acciones en lote en catálogo de Tiendanube con modal para modificación masiva de descuentos o precios (porcentaje, ajuste fijo o precio absoluto).
+- **🛡️ Resiliencia y Manejo de Errores:**
+  - Nuevo componente `ErrorBoundary` envolviendo las vistas para aislar fallos sin pantallas en blanco y ofrecer recuperación en 1 clic.
+  - Blindaje completo contra nulos y tipos en filtrado y ordenamiento de catálogos y auditorías.
+- **🔍 Sistema de Zoom Interactivo:**
+  - Soporte de atajos de teclado <kbd>Ctrl</kbd> + <kbd>+</kbd>, <kbd>Ctrl</kbd> + <kbd>-</kbd> y <kbd>Ctrl</kbd> + <kbd>0</kbd> tanto en Electron como en navegador web, con nivel de zoom persistido.
+
+---
+
 ## [0.4.0] - 2026-08-26
 
 ### 🛍️ Catálogo de Variantes Independientes, Árbol Jerárquico de Categorías y Auditoría con Acciones en Lote

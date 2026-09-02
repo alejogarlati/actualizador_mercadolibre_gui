@@ -115,33 +115,43 @@ Integrar **Tiendanube** como segunda plataforma de venta oficial dentro del ecos
 
 ---
 
-### 🧪 REQUISITOS TRANSVERSALES (Testing y Calidad de Código)
+## 🎯 Hito [v0.5.0]: Rediseño Anthropic, Unificación Multicanal, Modo Oscuro y Resiliencia
 
-1. **Suite de Tests Unitarios por Módulo:**
-   - **Backend:** Cobertura unitaria en `tests/test_tiendanube_models.py`, `tests/test_tiendanube_client.py`, `tests/test_tiendanube_db.py`, `tests/test_tiendanube_sync.py` y `tests/test_tiendanube_api.py` (43/43 tests pasando).
-   - **Frontend:** Build de Vite verificado con 0 errores (`npm run build`).
+### 📌 Objetivo
+Transformar la aplicación en una suite de gestión de precios de nivel industrial adoptando las directrices de diseño de Anthropic (*Warm Light* & *Obsidian Charcoal*), unificando componentes transversales entre Mercado Libre y Tiendanube, añadiendo soporte multi-variante en lote, columnas redimensionables, aislamiento de errores y control de zoom.
 
-2. **Tests de Impacto y No Regresión (Mercado Libre + SQLite):**
-   - Verificación automatizada de que las llamadas, sincronizaciones y cálculos de **Mercado Libre** siguen funcionando con 100% de exactitud tras la incorporación de Tiendanube.
-   - Validación de consistencia y concurrencia sobre la base SQLite (`local_cache.db`), comprobando que no existan bloqueos de base de datos ni colisiones de claves entre `items` y `tiendanube_items`.
+### 🏗️ Desglose de Fases de Implementación
 
-3. **Arquitectura Desacoplada:**
-   - Ninguna regla, modelo o lógica de Mercado Libre se mezcla con Tiendanube (`core/tiendanube_*` aislado de `core/calculator.py` y `core/client.py`).
+#### 🔹 Fase U1: Sistema de Diseño Anthropic y Dark Mode
+- [x] **Paleta Oficial y Dark Theme:** Variables CSS en `src/index.css` con selector `.dark` y persistencia en `localStorage`.
+- [x] **Conmutador de Tema (☀️ / 🌙):** Integrado en Header, pie de Sidebar y Hub Central.
+- [x] **Escala Tipográfica:** Tipografía base a 13px con interlineado 1.45 y fuentes Sans/Mono de Anthropic.
+
+#### 🔹 Fase U2: Navegación y Vistas Unificadas
+- [x] **Sidebar Colapsable:** Animación fluida, estado persistido y alineación de iconos.
+- [x] **Vistas Homogéneas de Sincronización:** `TiendaNubeSyncView.jsx` con layout idéntico a `MeliSyncView.jsx` (2 columnas).
+- [x] **Auditoría Financiera Multicanal:** Selección masiva y corrección con 1 clic.
+
+#### 🔹 Fase U3: Interactividad y Acciones Masivas
+- [x] **Columnas Redimensionables:** Soporte de arrastre horizontal en `Table.jsx`.
+- [x] **Isla Flotante de Acciones en Lote:** Modificación masiva de factores y precios.
+- [x] **Zoom Desktop:** Atajos <kbd>Ctrl</kbd> + <kbd>+</kbd>, <kbd>Ctrl</kbd> + <kbd>-</kbd>, <kbd>Ctrl</kbd> + <kbd>0</kbd> en Electron y Web.
+
+#### 🔹 Fase U4: Resiliencia y Estabilidad
+- [x] **Componente ErrorBoundary:** Aislamiento de excepciones visuales para prevenir pantallas en blanco.
+- [x] **Null Safety:** Blindaje de búsquedas, ordenamientos y atributos null/undefined.
 
 ---
 
-### 📈 Tabla de Seguimiento del Hito
+### 📈 Tabla de Seguimiento del Hito v0.5.0
 
-| Componente | Capa | Estado | Tests Requeridos |
+| Componente | Capa | Estado | Verificación |
 | :--- | :--- | :--- | :--- |
-| **Modelos & Schemas** | Backend | ✅ Completado | `tests/test_tiendanube_models.py` (13 tests) |
-| **Cliente HTTP Oficial** | Backend | ✅ Completado | `tests/test_tiendanube_client.py` (10 tests) |
-| **Persistencia SQLite** | Backend | ✅ Completado | `tests/test_tiendanube_db.py` (5 tests) |
-| **Sync Service** | Backend | ✅ Completado | `tests/test_tiendanube_sync.py` (3 tests) |
-| **Router API FastAPI** | Backend | ✅ Completado | `tests/test_tiendanube_api.py` (7 tests) |
-| **Platform Switcher** | Frontend | ✅ Completado | Build Vite (0 errores) |
-| **Dashboard Tiendanube** | Frontend | ✅ Completado | Build Vite (0 errores) |
-| **Catálogo & Variantes** | Frontend | ✅ Completado | Build Vite (0 errores) |
-| **Modal Alta/Edición** | Frontend | ✅ Completado | Build Vite (0 errores) |
-| **Sync Masivo ERP** | Frontend | ✅ Completado | Build Vite (0 errores) |
-| **Suite de No Regresión MeLi** | Transversal | ✅ Completado | Suite completa backend pasando 43/43 tests |
+| **Theme Switcher & Obsidian Dark** | Frontend | ✅ Completado | Verificado en 100% de vistas y tablas |
+| **Sidebar Colapsable** | Frontend | ✅ Completado | Persistencia probada |
+| **TiendaNubeSyncView (2 Columnas)** | Frontend | ✅ Completado | Flujo idéntico a MeLi |
+| **Tablas Redimensionables** | Frontend | ✅ Completado | Drag-to-resize activo |
+| **Isla Flotante de Acciones en Lote** | Frontend | ✅ Completado | Modal multivariante probado |
+| **Zoom con Atajos de Teclado** | Frontend/Electron | ✅ Completado | Zoom factor dinámico probado |
+| **ErrorBoundary & Null Guards** | Frontend | ✅ Completado | Captura de errores reactivos |
+| **Build & Compilación** | Frontend | ✅ Completado | Vite build exitoso (0 errores) |
