@@ -71,24 +71,52 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('app_theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.setAttribute('data-theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.setAttribute('data-theme', 'light');
-    }
+    const isDark = theme === 'dark';
+    document.documentElement.classList.toggle('dark', isDark);
+    document.body.classList.toggle('dark', isDark);
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // 3. TABS ACTIVOS
+  // 3. ZOOM SYSTEM (Ctrl++, Ctrl+-, Ctrl+0)
+  const [zoomLevel, setZoomLevel] = useState(() => {
+    const saved = localStorage.getItem('app_zoom_level');
+    return saved ? parseFloat(saved) : 1.0;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('app_zoom_level', String(zoomLevel));
+    document.documentElement.style.zoom = `${zoomLevel}`;
+  }, [zoomLevel]);
+
+  useEffect(() => {
+    const handleZoomKeyDown = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === '+' || e.key === '=' || e.key === 'Add') {
+          e.preventDefault();
+          setZoomLevel(prev => Math.min(Math.round((prev + 0.05) * 100) / 100, 1.8));
+        } else if (e.key === '-' || e.key === '_' || e.key === 'Subtract') {
+          e.preventDefault();
+          setZoomLevel(prev => Math.max(Math.round((prev - 0.05) * 100) / 100, 0.7));
+        } else if (e.key === '0' || e.key === 'NumPad0') {
+          e.preventDefault();
+          setZoomLevel(1.0);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleZoomKeyDown);
+    return () => window.removeEventListener('keydown', handleZoomKeyDown);
+  }, []);
+
+  // 4. TABS ACTIVOS
   const [activeTabMeli, setActiveTabMeli] = useState('dashboard');
   const [activeTabTN, setActiveTabTN] = useState('dashboard');
 
-  // 4. TOASTS
+  // 5. TOASTS
   const [toasts, setToasts] = useState([]);
   const addToast = (type, title, message = '') => {
     const id = Date.now() + Math.random();
@@ -102,7 +130,7 @@ export default function App() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // 5. ESTADO MERCADO LIBRE
+  // 6. ESTADO MERCADO LIBRE
   const [meliHealth, setMeliHealth] = useState({ status: 'checking', token_valid: false });
   const [meliStats, setMeliStats] = useState(null);
   const [meliAnalytics, setMeliAnalytics] = useState(null);
@@ -132,7 +160,7 @@ export default function App() {
   const [inspectingMeliAuditItem, setInspectingMeliAuditItem] = useState(null);
   const [updatingMeliItem, setUpdatingMeliItem] = useState(false);
 
-  // 6. ESTADO TIENDANUBE
+  // 7. ESTADO TIENDANUBE
   const [tnHealth, setTnHealth] = useState({ status: 'checking' });
   const [tnMetrics, setTnMetrics] = useState(null);
   const [tnVariants, setTnVariants] = useState([]);
@@ -190,7 +218,7 @@ export default function App() {
         fetchStats(),
         fetchAnalyticsSummary()
       ]);
-      setMeliHealth(h);
+      setMeliHealth(h || { status: 'offline', token_valid: false });
       if (st) setMeliStats(st);
       if (an) setMeliAnalytics(an);
     } catch (err) {
@@ -207,10 +235,10 @@ export default function App() {
       } else {
         data = await fetchItems(200, false);
       }
-      setMeliItems(data || []);
+      setMeliItems(Array.isArray(data) ? data : []);
       setMeliLastUpdatedCatalog(new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }));
       if (force) {
-        addToast('success', 'Catálogo Actualizado', `${data.length} publicaciones sincronizadas desde Mercado Libre.`);
+        addToast('success', 'Catálogo Actualizado', `${(data || []).length} publicaciones sincronizadas desde Mercado Libre.`);
       }
     } catch (err) {
       addToast('error', 'Error al Cargar Catálogo', err.message);
@@ -235,7 +263,9 @@ export default function App() {
   const loadMeliSettings = async () => {
     try {
       const rules = await fetchRules();
-      if (rules) setMeliSettings(rules);
+      if (rules && typeof rules === 'object') {
+        setMeliSettings(prev => ({ ...prev, ...rules }));
+      }
     } catch (err) {
       console.error(err);
     }
@@ -248,7 +278,7 @@ export default function App() {
         checkTiendanubeHealth(),
         fetchTiendanubeMetrics()
       ]);
-      setTnHealth(h);
+      setTnHealth(h || { status: 'offline' });
       setTnMetrics(m);
     } catch (err) {
       console.error(err);
@@ -265,10 +295,10 @@ export default function App() {
         fetchTiendanubeVariants('', null, 500, 0),
         fetchTiendanubeCategories()
       ]);
-      setTnVariants(vars || []);
-      setTnCategories(cats || []);
+      setTnVariants(Array.isArray(vars) ? vars : []);
+      setTnCategories(Array.isArray(cats) ? cats : []);
       if (force) {
-        addToast('success', 'Catálogo Tiendanube Actualizado', `${vars.length} variantes sincronizadas.`);
+        addToast('success', 'Catálogo Tiendanube Actualizado', `${(vars || []).length} variantes sincronizadas.`);
       }
     } catch (err) {
       addToast('error', 'Error al Cargar Tiendanube', err.message);
@@ -284,9 +314,10 @@ export default function App() {
         await refreshTiendanubeCategories();
       }
       const tree = await fetchTiendanubeCategoriesTree();
-      setTnCategoriesTree(tree || []);
+      setTnCategoriesTree(Array.isArray(tree) ? tree : []);
     } catch (err) {
       addToast('error', 'Error al Cargar Categorías', err.message);
+      setTnCategoriesTree([]);
     } finally {
       setTnLoadingCategories(false);
     }
@@ -478,7 +509,7 @@ export default function App() {
   // SI NO HAY PLATAFORMA SELECCIONADA, MOSTRAR EL HUB INSTITUCIONAL
   if (!selectedPlatform) {
     return (
-      <>
+      <div className={theme === 'dark' ? 'dark' : ''}>
         <PlatformSelectorScreen
           onSelectPlatform={(p) => setSelectedPlatform(p)}
           meliHealth={meliHealth}
@@ -487,7 +518,7 @@ export default function App() {
           onToggleTheme={toggleTheme}
         />
         <ToastContainer toasts={toasts} onRemove={removeToast} />
-      </>
+      </div>
     );
   }
 
@@ -496,7 +527,7 @@ export default function App() {
   const setCurrentActiveTab = isTN ? setActiveTabTN : setActiveTabMeli;
 
   return (
-    <div className="flex h-screen w-screen bg-[#faf9f5] dark:bg-[#141413] text-[#141413] dark:text-[#faf9f5] font-sans antialiased overflow-hidden">
+    <div className={`flex h-screen w-screen bg-[#faf9f5] dark:bg-[#141413] text-[#141413] dark:text-[#faf9f5] font-sans antialiased overflow-hidden ${theme === 'dark' ? 'dark' : ''}`}>
       
       {/* 1. SIDEBAR UNIFICADO & COLLAPSIBLE */}
       <Sidebar

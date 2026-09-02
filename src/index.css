@@ -84,9 +84,9 @@
     background-color: var(--bg-app);
     color: var(--text-main);
     font-family: var(--font-sans);
-    font-size: 12px;
-    line-height: 1.4;
-    letter-spacing: -0.24px;
+    font-size: 13px;
+    line-height: 1.45;
+    letter-spacing: -0.15px;
     margin: 0;
     padding: 0;
     min-height: 100dvh;
@@ -99,7 +99,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.02em;
-    line-height: 1.1;
+    line-height: 1.15;
     color: var(--text-main);
     font-weight: 700;
   }

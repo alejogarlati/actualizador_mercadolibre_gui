@@ -39,16 +39,20 @@ export default function MeliAuditView({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  const rawItems = auditReport?.items || [];
+  const rawItems = Array.isArray(auditReport) ? auditReport : (auditReport?.items || []);
 
   // Evaluación y KPIs dinámicos en vivo según la tolerancia seleccionada
   const dynamicAuditItems = useMemo(() => {
     return rawItems.map(item => {
       let evalStatus = "SIN_ERP";
-      if (item.precio_mostrador_erp && item.precio_mostrador_erp > 0) {
-        if (Math.abs(item.diferencia_pct) <= tolerancePct) {
+      const costoERP = Number(item.precio_mostrador_erp) || 0;
+      const netoRecibir = Number(item.neto_a_recibir) || 0;
+      const diffPct = item.diferencia_pct !== undefined && item.diferencia_pct !== null ? Number(item.diferencia_pct) : 0;
+
+      if (costoERP > 0) {
+        if (Math.abs(diffPct) <= tolerancePct) {
           evalStatus = "OK";
-        } else if (item.neto_a_recibir < item.precio_mostrador_erp) {
+        } else if (netoRecibir < costoERP) {
           evalStatus = "BAJO";
         } else {
           evalStatus = "ALTO";
@@ -72,15 +76,17 @@ export default function MeliAuditView({
   }, [dynamicAuditItems]);
 
   const filteredItems = useMemo(() => {
+    const search = (searchTerm || '').trim().toLowerCase();
     return dynamicAuditItems.filter(item => {
-      const matchSearch = 
-        item.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.item_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+      const title = (item.title || '').toLowerCase();
+      const itemId = (item.item_id || '').toLowerCase();
+      const sku = (item.sku || '').toLowerCase();
+
+      const matchSearch = !search || title.includes(search) || itemId.includes(search) || sku.includes(search);
 
       const matchStatus = statusFilter === 'all' || item.status_evaluacion === statusFilter;
 
-      const hasSku = item.sku && item.sku !== 'Sin SKU' && item.sku !== 'N/A' && item.sku.trim() !== '';
+      const hasSku = item.sku && item.sku !== 'Sin SKU' && item.sku !== 'N/A' && String(item.sku).trim() !== '';
       const matchSku = skuFilter === 'all' || (skuFilter === 'with_sku' ? hasSku : !hasSku);
 
       return matchSearch && matchStatus && matchSku;
@@ -95,12 +101,10 @@ export default function MeliAuditView({
       if (valA === undefined || valA === null) valA = '';
       if (valB === undefined || valB === null) valB = '';
 
-      if (typeof valA === 'string') valA = valA.toLowerCase();
-      if (typeof valB === 'string') valB = valB.toLowerCase();
-
-      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-      return 0;
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' }) * (sortOrder === 'asc' ? 1 : -1);
+      }
+      return ((Number(valA) || 0) - (Number(valB) || 0)) * (sortOrder === 'asc' ? 1 : -1);
     });
   }, [filteredItems, sortBy, sortOrder]);
 
@@ -196,15 +200,15 @@ export default function MeliAuditView({
         refreshTitle="Ejecutar Auditoría"
         filters={
           <>
-            <div className="flex items-center gap-1.5 bg-[#faf9f5] border border-[#e5e3dc] rounded-xl px-2.5 py-1.5 text-xs">
-              <Filter className="w-3.5 h-3.5 text-[#73726c]" />
+            <div className="flex items-center gap-1.5 bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] rounded-xl px-2.5 py-1.5 text-xs">
+              <Filter className="w-3.5 h-3.5 text-[#73726c] dark:text-[#a3a199]" />
               <select
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="bg-transparent text-xs font-bold text-[#141413] outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold text-[#141413] dark:text-[#faf9f5] outline-none cursor-pointer"
               >
                 <option value="all">Todos los dictámenes</option>
                 <option value="OK">En Rango OK</option>
@@ -214,14 +218,14 @@ export default function MeliAuditView({
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-[#faf9f5] border border-[#e5e3dc] rounded-xl px-2.5 py-1.5 text-xs">
+            <div className="flex items-center gap-1.5 bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] rounded-xl px-2.5 py-1.5 text-xs">
               <select
                 value={skuFilter}
                 onChange={(e) => {
                   setSkuFilter(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="bg-transparent text-xs font-bold text-[#141413] outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold text-[#141413] dark:text-[#faf9f5] outline-none cursor-pointer"
               >
                 <option value="all">SKU: Todos</option>
                 <option value="with_sku">Con SKU</option>
@@ -229,13 +233,13 @@ export default function MeliAuditView({
               </select>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-[#faf9f5] border border-[#e5e3dc] rounded-xl px-2.5 py-1.5 text-xs">
-              <SlidersHorizontal className="w-3.5 h-3.5 text-[#73726c]" />
-              <span className="text-[#73726c] font-medium">Tolerancia:</span>
+            <div className="flex items-center gap-1.5 bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] rounded-xl px-2.5 py-1.5 text-xs">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-[#73726c] dark:text-[#a3a199]" />
+              <span className="text-[#73726c] dark:text-[#a3a199] font-medium">Tolerancia:</span>
               <select
                 value={tolerancePct}
                 onChange={(e) => onToleranceChange(parseFloat(e.target.value))}
-                className="bg-transparent text-xs font-bold text-[#141413] outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold text-[#141413] dark:text-[#faf9f5] outline-none cursor-pointer"
               >
                 <option value={2.0}>±2%</option>
                 <option value={5.0}>±5% (Recomendado)</option>
@@ -246,8 +250,8 @@ export default function MeliAuditView({
         }
         actions={
           lastUpdated && (
-            <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-[#73726c] bg-[#faf9f5] border border-[#e5e3dc] px-2.5 py-1.5 rounded-xl font-mono">
-              <Clock className="w-3.5 h-3.5 text-[#9c998f]" />
+            <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-[#73726c] dark:text-[#a3a199] bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] px-2.5 py-1.5 rounded-xl font-mono">
+              <Clock className="w-3.5 h-3.5 text-[#9c998f] dark:text-[#73726c]" />
               <span>Aud: {lastUpdated}</span>
             </div>
           )
@@ -267,34 +271,34 @@ export default function MeliAuditView({
         renderRow={(item) => {
           return (
             <tr
-              key={item.item_id}
-              onClick={() => onInspectItem(item)}
-              className="hover:bg-[#faf9f5] cursor-pointer transition-colors group"
+              key={item.item_id || item.id}
+              onClick={() => onInspectItem && onInspectItem(item)}
+              className="hover:bg-[#faf9f5] dark:hover:bg-[#262624] cursor-pointer transition-colors group"
               title="Haz clic para ver el desglose detallado de costos"
             >
               <td className="py-2.5 px-3.5">
-                <div className="font-bold text-[#141413] truncate tracking-tight" title={item.title}>
-                  {item.title}
+                <div className="font-bold text-[#141413] dark:text-[#faf9f5] truncate tracking-tight" title={item.title}>
+                  {item.title || 'Sin Título'}
                 </div>
-                <div className="text-[10.5px] text-[#73726c] font-mono mt-0.5 truncate">
-                  SKU: <strong className="text-[#141413]">{item.sku || 'N/A'}</strong> | ID: {item.item_id}
+                <div className="text-[10.5px] text-[#73726c] dark:text-[#a3a199] font-mono mt-0.5 truncate">
+                  SKU: <strong className="text-[#141413] dark:text-[#faf9f5]">{item.sku || 'N/A'}</strong> | ID: {item.item_id || item.id}
                 </div>
               </td>
 
-              <td className="py-2.5 px-3.5 text-right font-mono font-bold text-[#141413]">
-                ${item.price_ml?.toLocaleString()}
+              <td className="py-2.5 px-3.5 text-right font-mono font-bold text-[#141413] dark:text-[#faf9f5]">
+                ${(Number(item.price_ml || item.price) || 0).toLocaleString()}
               </td>
 
-              <td className="py-2.5 px-3.5 text-center font-mono text-[#73726c]">
-                {item.comision_porcentaje}%
+              <td className="py-2.5 px-3.5 text-center font-mono text-[#73726c] dark:text-[#a3a199]">
+                {item.comision_porcentaje ?? 0}%
               </td>
 
-              <td className="py-2.5 px-3.5 text-right font-mono font-bold text-[#15803d]">
-                ${item.neto_a_recibir?.toLocaleString()}
+              <td className="py-2.5 px-3.5 text-right font-mono font-bold text-[#15803d] dark:text-[#4ade80]">
+                ${(Number(item.neto_a_recibir) || 0).toLocaleString()}
               </td>
 
-              <td className="py-2.5 px-3.5 text-right font-mono font-medium text-[#73726c]">
-                {item.precio_mostrador_erp ? `$${item.precio_mostrador_erp.toLocaleString()}` : 'N/A'}
+              <td className="py-2.5 px-3.5 text-right font-mono font-medium text-[#73726c] dark:text-[#a3a199]">
+                {item.precio_mostrador_erp ? `$${Number(item.precio_mostrador_erp).toLocaleString()}` : 'N/A'}
               </td>
 
               <td className="py-2.5 px-3.5 text-center">

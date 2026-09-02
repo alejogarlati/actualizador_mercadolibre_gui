@@ -6,12 +6,14 @@ import Tabs from '../ui/Tabs';
 import Button from '../ui/Button';
 
 export default function MeliSettingsView({
-  settingsForm,
+  settingsForm = {},
   setSettingsForm,
   onSaveSettings,
   saving = false
 }) {
   const [activeSubTab, setActiveSubTab] = useState('general');
+
+  const form = settingsForm || {};
 
   const tabs = [
     { id: 'general', label: 'Parámetros Generales' },
@@ -46,8 +48,8 @@ export default function MeliSettingsView({
                   type="number"
                   step="0.5"
                   required
-                  value={settingsForm.general_discount_pct}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, general_discount_pct: parseFloat(e.target.value) || 0 })}
+                  value={form.general_discount_pct ?? 30.0}
+                  onChange={(e) => setSettingsForm({ ...form, general_discount_pct: parseFloat(e.target.value) || 0 })}
                 />
 
                 <Input
@@ -56,8 +58,8 @@ export default function MeliSettingsView({
                   type="number"
                   step="5"
                   required
-                  value={settingsForm.shipping_discount_pct}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, shipping_discount_pct: parseFloat(e.target.value) || 0 })}
+                  value={form.shipping_discount_pct ?? 50.0}
+                  onChange={(e) => setSettingsForm({ ...form, shipping_discount_pct: parseFloat(e.target.value) || 0 })}
                 />
               </div>
 
@@ -67,8 +69,8 @@ export default function MeliSettingsView({
                   type="number"
                   step="0.05"
                   required
-                  value={settingsForm.default_tax_rate_pct}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, default_tax_rate_pct: parseFloat(e.target.value) || 0 })}
+                  value={form.default_tax_rate_pct ?? 0.65}
+                  onChange={(e) => setSettingsForm({ ...form, default_tax_rate_pct: parseFloat(e.target.value) || 0 })}
                 />
 
                 <Input
@@ -76,8 +78,8 @@ export default function MeliSettingsView({
                   type="number"
                   step="1"
                   required
-                  value={settingsForm.tolerance_pct}
-                  onChange={(e) => setSettingsForm({ ...settingsForm, tolerance_pct: parseFloat(e.target.value) || 0 })}
+                  value={form.tolerance_pct ?? 5.0}
+                  onChange={(e) => setSettingsForm({ ...form, tolerance_pct: parseFloat(e.target.value) || 0 })}
                 />
               </div>
             </div>
@@ -89,26 +91,26 @@ export default function MeliSettingsView({
                 label="Palabras Clave Excluidas (Separadas por coma)"
                 helperText="Los productos que contengan estas palabras revertirán el descuento de mostrador."
                 placeholder="mueble, aluminio, chapa"
-                value={settingsForm.excluded_keywords?.join(', ')}
+                value={form.excluded_keywords?.join(', ') || ''}
                 onChange={(e) => setSettingsForm({
-                  ...settingsForm,
+                  ...form,
                   excluded_keywords: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                 })}
               />
 
               <div className="flex flex-col gap-1 w-full text-left">
-                <label className="text-xs font-bold text-[#141413] tracking-tight">
+                <label className="text-xs font-bold text-[#141413] dark:text-[#faf9f5] tracking-tight">
                   IDs de Categorías Excluidas (Separadas por coma)
                 </label>
                 <textarea
                   rows="3"
                   placeholder="MLA30088, MLA7141, MLA30069"
-                  value={settingsForm.excluded_categories?.join(', ')}
+                  value={form.excluded_categories?.join(', ') || ''}
                   onChange={(e) => setSettingsForm({
-                    ...settingsForm,
+                    ...form,
                     excluded_categories: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
                   })}
-                  className="w-full bg-[#faf9f5] focus:bg-white text-xs text-[#141413] p-3 rounded-xl border border-[#e5e3dc] focus:border-[#141413] focus:ring-1 focus:ring-[#141413] focus:outline-none font-mono"
+                  className="w-full bg-[#faf9f5] dark:bg-[#262624] focus:bg-white dark:focus:bg-[#1c1c1a] text-xs text-[#141413] dark:text-[#faf9f5] p-3 rounded-xl border border-[#e5e3dc] dark:border-[#363633] focus:border-[#141413] dark:focus:border-[#faf9f5] focus:ring-1 focus:ring-[#141413] dark:focus:ring-[#faf9f5] focus:outline-none font-mono"
                 />
               </div>
             </div>
@@ -116,16 +118,16 @@ export default function MeliSettingsView({
 
           {activeSubTab === 'packs' && (
             <div className="flex flex-col gap-3 animate-in fade-in duration-150">
-              <p className="text-xs text-[#73726c] leading-relaxed">
+              <p className="text-xs text-[#73726c] dark:text-[#a3a199] leading-relaxed">
                 Define multiplicadores fijos de unidades por pack para SKUs o IDs específicos donde una publicación contenga combos de productos.
               </p>
-              <div className="p-4 bg-[#faf9f5] border border-[#e5e3dc] rounded-2xl text-xs text-[#141413] font-mono overflow-x-auto">
-                <pre>{JSON.stringify(settingsForm.pack_multipliers || {}, null, 2)}</pre>
+              <div className="p-4 bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] rounded-2xl text-xs text-[#141413] dark:text-[#faf9f5] font-mono overflow-x-auto">
+                <pre>{JSON.stringify(form.pack_multipliers || {}, null, 2)}</pre>
               </div>
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#ece9df] mt-2">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#ece9df] dark:border-[#2d2d2a] mt-2">
             <Button
               type="submit"
               variant="primary"
