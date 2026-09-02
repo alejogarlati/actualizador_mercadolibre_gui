@@ -289,7 +289,7 @@ export default function TiendaNubeProductModal({
 
               {/* Descripción */}
               <div className="flex flex-col gap-1 w-full text-left">
-                <label className="text-xs font-bold text-[#141413] tracking-tight">
+                <label className="text-xs font-bold text-[#141413] dark:text-[#faf9f5] tracking-tight">
                   Descripción / Ficha Técnica
                 </label>
                 <textarea
@@ -297,7 +297,7 @@ export default function TiendaNubeProductModal({
                   placeholder="Descripción del producto o características..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-[#faf9f5] focus:bg-white text-xs text-[#141413] p-3 rounded-xl border border-[#e5e3dc] focus:border-[#141413] focus:ring-1 focus:ring-[#141413] focus:outline-none font-medium"
+                  className="w-full bg-[#faf9f5] dark:bg-[#262624] focus:bg-white dark:focus:bg-[#1c1c1a] text-xs text-[#141413] dark:text-[#faf9f5] p-3 rounded-xl border border-[#e5e3dc] dark:border-[#363633] focus:border-[#141413] dark:focus:border-[#faf9f5] focus:ring-1 focus:ring-[#141413] dark:focus:ring-[#faf9f5] focus:outline-none font-medium"
                 />
               </div>
 
@@ -311,29 +311,29 @@ export default function TiendaNubeProductModal({
 
               {/* Switches */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                <label className="flex items-center gap-3 p-3.5 bg-[#faf9f5] rounded-xl border border-[#e5e3dc] cursor-pointer hover:bg-[#f4f2eb] transition-colors">
+                <label className="flex items-center gap-3 p-3.5 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#30302d] transition-colors">
                   <input
                     type="checkbox"
                     checked={freeShipping}
                     onChange={(e) => setFreeShipping(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#141413] focus:ring-0"
+                    className="w-4 h-4 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
                   />
                   <div>
-                    <span className="font-bold text-[#141413] block">Envío Gratis</span>
-                    <span className="text-[10.5px] text-[#73726c]">Flete bonificado</span>
+                    <span className="font-bold text-[#141413] dark:text-[#faf9f5] block">Envío Gratis</span>
+                    <span className="text-[10.5px] text-[#73726c] dark:text-[#a3a199]">Flete bonificado</span>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 p-3.5 bg-[#faf9f5] rounded-xl border border-[#e5e3dc] cursor-pointer hover:bg-[#f4f2eb] transition-colors">
+                <label className="flex items-center gap-3 p-3.5 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#30302d] transition-colors">
                   <input
                     type="checkbox"
                     checked={published}
                     onChange={(e) => setPublished(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#141413] focus:ring-0"
+                    className="w-4 h-4 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
                   />
                   <div>
-                    <span className="font-bold text-[#141413] block">Publicado / Activo</span>
-                    <span className="text-[10.5px] text-[#73726c]">Visible en la tienda online</span>
+                    <span className="font-bold text-[#141413] dark:text-[#faf9f5] block">Publicado / Activo</span>
+                    <span className="text-[10.5px] text-[#73726c] dark:text-[#a3a199]">Visible en la tienda online</span>
                   </div>
                 </label>
               </div>
@@ -341,11 +341,11 @@ export default function TiendaNubeProductModal({
           ) : (
             <div className="flex flex-col gap-5">
               {/* Atributos */}
-              <div className="p-4 bg-[#faf9f5] rounded-2xl border border-[#e5e3dc] flex flex-col gap-3">
+              <div className="p-4 bg-[#faf9f5] dark:bg-[#262624] rounded-2xl border border-[#e5e3dc] dark:border-[#363633] flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-bold text-[#141413]">Atributos del Producto</h4>
-                    <p className="text-[10.5px] text-[#73726c]">Máximo 3 atributos (ej. Color, Medida, Espesor).</p>
+                    <h4 className="font-bold text-[#141413] dark:text-[#faf9f5]">Atributos del Producto</h4>
+                    <p className="text-[10.5px] text-[#73726c] dark:text-[#a3a199]">Máximo 3 atributos (ej. Color, Medida, Espesor).</p>
                   </div>
                   <Button
                     variant="outline"
@@ -361,18 +361,18 @@ export default function TiendaNubeProductModal({
                 {attributes.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                     {attributes.map((attr, aIdx) => (
-                      <div key={aIdx} className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-[#e5e3dc] shadow-xs">
+                      <div key={aIdx} className="flex items-center gap-2 bg-white dark:bg-[#1c1c1a] p-2.5 rounded-xl border border-[#e5e3dc] dark:border-[#363633] shadow-xs">
                         <input
                           type="text"
                           value={attr}
                           onChange={(e) => updateAttributeName(aIdx, e.target.value)}
                           placeholder={`Atributo #${aIdx+1}`}
-                          className="bg-transparent text-[#141413] font-bold text-xs focus:outline-none w-full"
+                          className="bg-transparent text-[#141413] dark:text-[#faf9f5] font-bold text-xs focus:outline-none w-full"
                         />
                         <button
                           type="button"
                           onClick={() => removeAttribute(aIdx)}
-                          className="text-[#73726c] hover:text-[#b91c1c] p-0.5 cursor-pointer"
+                          className="text-[#73726c] dark:text-[#a3a199] hover:text-[#b91c1c] dark:hover:text-red-400 p-0.5 cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -385,7 +385,7 @@ export default function TiendaNubeProductModal({
               {/* Matriz de Variantes */}
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-[#141413]">Variantes ({variants.length})</h4>
+                  <h4 className="font-bold text-[#141413] dark:text-[#faf9f5]">Variantes ({variants.length})</h4>
                   <Button
                     variant="primary"
                     size="sm"
@@ -398,14 +398,14 @@ export default function TiendaNubeProductModal({
 
                 <div className="flex flex-col gap-3">
                   {variants.map((v, vIdx) => (
-                    <div key={vIdx} className="p-4 bg-[#faf9f5] rounded-2xl border border-[#e5e3dc] flex flex-col gap-3">
-                      <div className="flex items-center justify-between pb-2 border-b border-[#ece9df]">
-                        <span className="font-bold text-[#141413]">Variante #{vIdx + 1}</span>
+                    <div key={vIdx} className="p-4 bg-[#faf9f5] dark:bg-[#262624] rounded-2xl border border-[#e5e3dc] dark:border-[#363633] flex flex-col gap-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-[#ece9df] dark:border-[#2d2d2a]">
+                        <span className="font-bold text-[#141413] dark:text-[#faf9f5]">Variante #{vIdx + 1}</span>
                         {variants.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeVariant(vIdx)}
-                            className="text-[#73726c] hover:text-[#b91c1c] p-1 rounded cursor-pointer"
+                            className="text-[#73726c] dark:text-[#a3a199] hover:text-[#b91c1c] dark:hover:text-red-400 p-1 rounded cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>

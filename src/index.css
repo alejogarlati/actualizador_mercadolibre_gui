@@ -108,6 +108,22 @@
     font-family: var(--font-mono);
     letter-spacing: 0;
   }
+
+  /* Soporte nativo para selects y options en dark mode */
+  select option {
+    background-color: var(--bg-surface);
+    color: var(--text-main);
+  }
+
+  .dark select option {
+    background-color: #1c1c1a;
+    color: #faf9f5;
+  }
+
+  /* Defensivo global para hover en filas de tablas en dark mode */
+  .dark tbody tr:hover {
+    background-color: #262624 !important;
+  }
 }
 
 /* Transiciones Snappy Anthropic */

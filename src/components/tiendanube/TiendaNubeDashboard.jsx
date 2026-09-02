@@ -125,8 +125,8 @@ export default function TiendaNubeDashboard({
             </>
           }
         >
-          <p className="text-xs text-[#73726c] leading-relaxed">
-            Cruza los códigos SKU de <code className="bg-[#faf9f5] border border-[#e5e3dc] px-1.5 py-0.5 rounded text-[#141413] font-mono">erp_precios.csv</code> con el catálogo de Tiendanube, aplicando márgenes porcentuales y actualizando las variantes en segundo plano.
+          <p className="text-xs text-[#73726c] dark:text-[#a3a199] leading-relaxed">
+            Cruza los códigos SKU de <code className="bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] px-1.5 py-0.5 rounded text-[#141413] dark:text-[#faf9f5] font-mono">erp_precios.csv</code> con el catálogo de Tiendanube, aplicando márgenes porcentuales y actualizando las variantes en segundo plano.
           </p>
         </Card>
 

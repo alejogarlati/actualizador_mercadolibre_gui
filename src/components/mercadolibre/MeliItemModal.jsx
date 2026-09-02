@@ -82,15 +82,15 @@ export default function MeliItemModal({
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-xs">
         {/* Thumbnail & Title Info */}
-        <div className="bg-[#faf9f5] p-3 rounded-2xl border border-[#e5e3dc] flex items-center gap-3">
+        <div className="bg-[#faf9f5] dark:bg-[#262624] p-3 rounded-2xl border border-[#e5e3dc] dark:border-[#363633] flex items-center gap-3">
           {item.thumbnail ? (
-            <img src={item.thumbnail} alt="" className="w-12 h-12 rounded-xl object-cover border border-[#e5e3dc]" />
+            <img src={item.thumbnail} alt="" className="w-12 h-12 rounded-xl object-cover border border-[#e5e3dc] dark:border-[#363633] shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-xl bg-[#f4f2eb] border border-[#e5e3dc]" />
+            <div className="w-12 h-12 rounded-xl bg-[#f4f2eb] dark:bg-[#1c1c1a] border border-[#e5e3dc] dark:border-[#363633] shrink-0" />
           )}
           <div className="min-w-0">
-            <div className="font-bold text-[#141413] truncate tracking-tight">{item.title}</div>
-            <div className="text-[10.5px] text-[#73726c] font-mono mt-0.5">ID: {item.id}</div>
+            <div className="font-bold text-[#141413] dark:text-[#faf9f5] truncate tracking-tight">{item.title}</div>
+            <div className="text-[10.5px] text-[#73726c] dark:text-[#a3a199] font-mono mt-0.5">ID: {item.id}</div>
           </div>
         </div>
 
@@ -144,11 +144,11 @@ export default function MeliItemModal({
           />
 
           <div className="flex flex-col gap-1 w-full text-left">
-            <label className="text-xs font-bold text-[#141413] tracking-tight">
+            <label className="text-xs font-bold text-[#141413] dark:text-[#faf9f5] tracking-tight">
               Categoría MeLi
             </label>
-            <div className="bg-[#faf9f5] border border-[#e5e3dc] rounded-xl px-3 py-2.5 text-xs font-medium text-[#73726c] truncate flex items-center gap-1.5" title={item.category_name || editForm.category_id}>
-              <Folder className="w-3.5 h-3.5 text-[#9c998f] shrink-0" />
+            <div className="bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] rounded-xl px-3 py-2.5 text-xs font-medium text-[#73726c] dark:text-[#a3a199] truncate flex items-center gap-1.5" title={item.category_name || editForm.category_id}>
+              <Folder className="w-3.5 h-3.5 text-[#9c998f] dark:text-[#73726c] shrink-0" />
               <span className="truncate">{item.category_name || editForm.category_id}</span>
             </div>
           </div>
