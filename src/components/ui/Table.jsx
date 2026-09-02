@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowUpDown, RefreshCw, PackageX } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { RefreshCw, PackageX } from 'lucide-react';
 
 export default function Table({
   columns = [], // [{ key, label, align: 'left'|'center'|'right', width, minWidth, sortable, renderHeader }]
@@ -16,7 +16,6 @@ export default function Table({
   tableClassName = '',
   resizable = true
 }) {
-  // Inicializar anchos numéricos de columnas
   const parseWidth = (w) => {
     if (typeof w === 'number') return w;
     if (typeof w === 'string') {
@@ -34,7 +33,6 @@ export default function Table({
     return initial;
   });
 
-  // Resincronizar si cambian las columnas
   useEffect(() => {
     setColWidths(prev => {
       const next = { ...prev };
@@ -47,7 +45,6 @@ export default function Table({
     });
   }, [columns]);
 
-  // Manejo del redimensionamiento por arrastre
   const resizingCol = useRef(null);
   const startX = useRef(0);
   const startWidth = useRef(0);
@@ -89,7 +86,7 @@ export default function Table({
   const totalTableWidth = columns.reduce((acc, col) => acc + (colWidths[col.key] || 150), 0);
 
   return (
-    <div className={`bg-white border border-[#e5e3dc] rounded-2xl shadow-card overflow-hidden flex flex-col ${className}`}>
+    <div className={`bg-white dark:bg-[#1c1c1a] border border-[#e5e3dc] dark:border-[#2d2d2a] rounded-2xl shadow-card overflow-hidden flex flex-col ${className}`}>
       <div className="overflow-x-auto">
         <table 
           className={`w-full text-left border-collapse text-xs table-fixed ${tableClassName}`}
@@ -105,7 +102,7 @@ export default function Table({
           </colgroup>
 
           <thead>
-            <tr className="bg-[#faf9f5] border-b border-[#e5e3dc] text-[#73726c] font-bold uppercase tracking-wider text-[10.5px] select-none">
+            <tr className="bg-[#faf9f5] dark:bg-[#232321] border-b border-[#e5e3dc] dark:border-[#2d2d2a] text-[#73726c] dark:text-[#a3a199] font-bold uppercase tracking-wider text-[10.5px] select-none">
               {columns.map((col, index) => {
                 const isCurrentSort = sortBy === col.key;
                 const alignClass = 
@@ -119,7 +116,7 @@ export default function Table({
                     style={{ width: `${colWidths[col.key] || 150}px` }}
                     onClick={() => col.sortable && onSort && onSort(col.key)}
                     className={`relative py-3 px-3.5 group ${
-                      col.sortable ? 'cursor-pointer hover:bg-[#f2efe6] transition-colors' : ''
+                      col.sortable ? 'cursor-pointer hover:bg-[#f2efe6] dark:hover:bg-[#2c2c29] transition-colors' : ''
                     }`}
                   >
                     <div className={`flex items-center gap-1 ${alignClass} truncate pr-2`}>
@@ -129,7 +126,7 @@ export default function Table({
                         <span className="truncate">{col.label}</span>
                       )}
                       {col.sortable && (
-                        <span className={`text-[10px] shrink-0 ${isCurrentSort ? 'text-[#141413] font-black' : 'text-[#9c998f]'}`}>
+                        <span className={`text-[10px] shrink-0 ${isCurrentSort ? 'text-[#141413] dark:text-[#faf9f5] font-black' : 'text-[#9c998f] dark:text-[#6b6960]'}`}>
                           {isCurrentSort ? (sortOrder === 'asc' ? '▲' : '▼') : '↕'}
                         </span>
                       )}
@@ -141,9 +138,9 @@ export default function Table({
                         onMouseDown={(e) => handleMouseDown(col.key, e)}
                         onClick={(e) => e.stopPropagation()}
                         title="Arrastrar para redimensionar columna"
-                        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize flex items-center justify-center group-hover:bg-[#141413]/10 active:bg-[#141413] hover:bg-[#141413] transition-colors z-10"
+                        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize flex items-center justify-center group-hover:bg-[#141413]/10 dark:group-hover:bg-[#faf9f5]/10 active:bg-[#141413] dark:active:bg-[#faf9f5] hover:bg-[#141413] dark:hover:bg-[#faf9f5] transition-colors z-10"
                       >
-                        <div className="w-[1px] h-3.5 bg-[#e5e3dc] group-hover:bg-[#141413]" />
+                        <div className="w-[1px] h-3.5 bg-[#e5e3dc] dark:bg-[#363633] group-hover:bg-[#141413] dark:group-hover:bg-[#faf9f5]" />
                       </div>
                     )}
                   </th>
@@ -152,24 +149,24 @@ export default function Table({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-[#ece9df] text-[#141413]">
+          <tbody className="divide-y divide-[#ece9df] dark:divide-[#2d2d2a] text-[#141413] dark:text-[#faf9f5]">
             {loading ? (
               <tr>
-                <td colSpan={columns.length} className="py-16 text-center text-[#73726c]">
+                <td colSpan={columns.length} className="py-16 text-center text-[#73726c] dark:text-[#a3a199]">
                   <div className="flex flex-col items-center justify-center gap-2.5">
-                    <RefreshCw className="w-6 h-6 animate-spin text-[#141413]" />
-                    <span className="font-semibold text-xs text-[#141413]">Cargando datos...</span>
+                    <RefreshCw className="w-6 h-6 animate-spin text-[#141413] dark:text-[#faf9f5]" />
+                    <span className="font-semibold text-xs text-[#141413] dark:text-[#faf9f5]">Cargando datos...</span>
                   </div>
                 </td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="py-14 text-center text-[#73726c]">
+                <td colSpan={columns.length} className="py-14 text-center text-[#73726c] dark:text-[#a3a199]">
                   <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
-                    <PackageX className="w-9 h-9 text-[#9c998f]" />
-                    <p className="text-xs font-bold text-[#141413]">{emptyMessage}</p>
+                    <PackageX className="w-9 h-9 text-[#9c998f] dark:text-[#6b6960]" />
+                    <p className="text-xs font-bold text-[#141413] dark:text-[#faf9f5]">{emptyMessage}</p>
                     {emptySubMessage && (
-                      <p className="text-[11px] text-[#73726c]">{emptySubMessage}</p>
+                      <p className="text-[11px] text-[#73726c] dark:text-[#a3a199]">{emptySubMessage}</p>
                     )}
                   </div>
                 </td>

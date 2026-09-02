@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, Settings as SettingsIcon, LogOut } from 'lucide-react';
+import { RefreshCw, Settings as SettingsIcon, LogOut, Sun, Moon } from 'lucide-react';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 
@@ -11,9 +11,12 @@ export default function Header({
   onRefreshHealth,
   healthRefreshing = false,
   onOpenSettings,
-  onBackToHub
+  onBackToHub,
+  theme = 'light',
+  onToggleTheme
 }) {
   const isTN = selectedPlatform === 'tiendanube';
+  const isDark = theme === 'dark';
 
   const getTabTitle = () => {
     if (isTN) {
@@ -47,17 +50,17 @@ export default function Header({
   const isConnected = isTN ? tnHealth?.status === 'online' : meliHealth?.token_valid;
 
   return (
-    <header className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-[#e5e3dc] gap-4 shrink-0">
+    <header className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-[#e5e3dc] dark:border-[#2d2d2a] gap-4 shrink-0">
       <div>
-        <h2 className="text-xl font-bold text-[#141413] tracking-tight">
+        <h2 className="text-xl font-bold text-[#141413] dark:text-[#faf9f5] tracking-tight">
           {getTabTitle()}
         </h2>
-        <p className="text-[11px] text-[#73726c] mt-0.5 font-medium">
+        <p className="text-[11px] text-[#73726c] dark:text-[#a3a199] mt-0.5 font-medium">
           {getTabSubtitle()}
         </p>
       </div>
 
-      {/* Badges de Conexión & Acciones */}
+      {/* Badges de Conexión, Toggle de Tema & Acciones */}
       <div className="flex items-center gap-2 self-end md:self-auto">
         <Badge variant={isConnected ? 'success' : 'error'} dot size="md">
           {isTN 
@@ -65,6 +68,19 @@ export default function Header({
             : (isConnected ? `Conectado (${meliHealth?.nickname || 'Vendedor'})` : 'Backend / Token Expirado')
           }
         </Badge>
+
+        {/* Toggle Dark / Light Theme */}
+        {onToggleTheme && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onToggleTheme}
+            icon={isDark ? Sun : Moon}
+            title={isDark ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+          >
+            <span className="hidden sm:inline">{isDark ? 'Claro' : 'Oscuro'}</span>
+          </Button>
+        )}
 
         <Button
           variant="secondary"

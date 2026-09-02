@@ -64,11 +64,31 @@ export default function App() {
     return localStorage.getItem('selected_platform') || null;
   });
 
-  // 2. TABS ACTIVOS
+  // 2. TEMA OSCURO / CLARO (DARK MODE)
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('app_theme') || 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('app_theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // 3. TABS ACTIVOS
   const [activeTabMeli, setActiveTabMeli] = useState('dashboard');
   const [activeTabTN, setActiveTabTN] = useState('dashboard');
 
-  // 3. TOASTS
+  // 4. TOASTS
   const [toasts, setToasts] = useState([]);
   const addToast = (type, title, message = '') => {
     const id = Date.now() + Math.random();
@@ -82,7 +102,7 @@ export default function App() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // 4. ESTADO MERCADO LIBRE
+  // 5. ESTADO MERCADO LIBRE
   const [meliHealth, setMeliHealth] = useState({ status: 'checking', token_valid: false });
   const [meliStats, setMeliStats] = useState(null);
   const [meliAnalytics, setMeliAnalytics] = useState(null);
@@ -112,7 +132,7 @@ export default function App() {
   const [inspectingMeliAuditItem, setInspectingMeliAuditItem] = useState(null);
   const [updatingMeliItem, setUpdatingMeliItem] = useState(false);
 
-  // 5. ESTADO TIENDANUBE
+  // 6. ESTADO TIENDANUBE
   const [tnHealth, setTnHealth] = useState({ status: 'checking' });
   const [tnMetrics, setTnMetrics] = useState(null);
   const [tnVariants, setTnVariants] = useState([]);
@@ -463,6 +483,8 @@ export default function App() {
           onSelectPlatform={(p) => setSelectedPlatform(p)}
           meliHealth={meliHealth}
           tnHealth={tnHealth}
+          theme={theme}
+          onToggleTheme={toggleTheme}
         />
         <ToastContainer toasts={toasts} onRemove={removeToast} />
       </>
@@ -474,7 +496,7 @@ export default function App() {
   const setCurrentActiveTab = isTN ? setActiveTabTN : setActiveTabMeli;
 
   return (
-    <div className="flex h-screen w-screen bg-[#faf9f5] text-[#141413] font-sans antialiased overflow-hidden">
+    <div className="flex h-screen w-screen bg-[#faf9f5] dark:bg-[#141413] text-[#141413] dark:text-[#faf9f5] font-sans antialiased overflow-hidden">
       
       {/* 1. SIDEBAR UNIFICADO & COLLAPSIBLE */}
       <Sidebar
@@ -482,6 +504,8 @@ export default function App() {
         activeTab={currentActiveTab}
         onSelectTab={setCurrentActiveTab}
         onBackToHub={() => setSelectedPlatform(null)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* 2. ÁREA PRINCIPAL */}
@@ -500,6 +524,8 @@ export default function App() {
             healthRefreshing={healthRefreshing}
             onOpenSettings={() => setCurrentActiveTab('rules')}
             onBackToHub={() => setSelectedPlatform(null)}
+            theme={theme}
+            onToggleTheme={toggleTheme}
           />
 
           {/* VISTAS DE MERCADO LIBRE */}
@@ -596,7 +622,7 @@ export default function App() {
                   onDelete={handleDeleteTnProduct}
                   onSaveVariantOverride={handleSaveTnVariantOverride}
                   onBatchUpdateOverrides={handleBatchUpdateTnOverrides}
-                  onBatchUpdatePrices={handleBatchUpdateTnPrices}
+                  onBatchUpdatePrices={handleBatchUpdatePrices}
                 />
               )}
 

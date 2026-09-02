@@ -16,16 +16,16 @@ export default function Button({
   title = '',
   ...props
 }) {
-  const baseClasses = "inline-flex items-center justify-center font-bold tracking-tight rounded-xl transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#141413] focus-visible:ring-offset-2 active:scale-[0.98]";
+  const baseClasses = "inline-flex items-center justify-center font-bold tracking-tight rounded-xl transition-all select-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#141413] dark:focus-visible:ring-[#faf9f5] focus-visible:ring-offset-2 active:scale-[0.98]";
 
   const variantClasses = {
-    primary: "bg-[#141413] hover:bg-[#262624] text-white shadow-xs border border-[#141413]",
-    secondary: "bg-[#faf9f5] hover:bg-[#f2efe6] text-[#141413] border border-[#e5e3dc] shadow-xs",
-    outline: "bg-transparent hover:bg-[#faf9f5] text-[#141413] border border-[#141413]",
-    ghost: "bg-transparent hover:bg-[#f4f2eb] text-[#141413] border border-transparent",
-    danger: "bg-[#b91c1c] hover:bg-[#991b1b] text-white shadow-xs border border-[#b91c1c]",
-    "danger-outline": "bg-transparent hover:bg-red-50 text-[#b91c1c] border border-[#fecaca]",
-    muted: "bg-[#f4f2eb] hover:bg-[#ece9df] text-[#73726c] hover:text-[#141413] border border-[#e5e3dc]"
+    primary: "bg-[#141413] hover:bg-[#262624] text-white shadow-xs border border-[#141413] dark:bg-[#faf9f5] dark:hover:bg-[#ece9df] dark:text-[#141413] dark:border-[#faf9f5]",
+    secondary: "bg-[#faf9f5] hover:bg-[#f2efe6] text-[#141413] border border-[#e5e3dc] shadow-xs dark:bg-[#262624] dark:hover:bg-[#30302d] dark:text-[#faf9f5] dark:border-[#363633]",
+    outline: "bg-transparent hover:bg-[#faf9f5] text-[#141413] border border-[#141413] dark:text-[#faf9f5] dark:border-[#a3a199] dark:hover:bg-[#262624]",
+    ghost: "bg-transparent hover:bg-[#f4f2eb] text-[#141413] border border-transparent dark:text-[#faf9f5] dark:hover:bg-[#262624]",
+    danger: "bg-[#b91c1c] hover:bg-[#991b1b] text-white shadow-xs border border-[#b91c1c] dark:bg-[#dc2626] dark:hover:bg-[#b91c1c]",
+    "danger-outline": "bg-transparent hover:bg-red-50 text-[#b91c1c] border border-[#fecaca] dark:hover:bg-red-950/40 dark:border-red-900/60 dark:text-red-400",
+    muted: "bg-[#f4f2eb] hover:bg-[#ece9df] text-[#73726c] hover:text-[#141413] border border-[#e5e3dc] dark:bg-[#262624] dark:hover:bg-[#30302d] dark:text-[#a3a199] dark:hover:text-[#faf9f5] dark:border-[#363633]"
   };
 
   const sizeClasses = {
