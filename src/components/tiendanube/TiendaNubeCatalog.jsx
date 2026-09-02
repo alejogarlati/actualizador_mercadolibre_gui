@@ -72,7 +72,7 @@ export default function TiendaNubeCatalog({
   const [pageSize, setPageSize] = useState(25);
 
   // Modal para Acciones Masivas
-  const [batchActionModal, setBatchActionModal] = useState({ open: false, type: null }); // 'discount' | 'price'
+  const [batchActionModal, setBatchActionModal] = useState({ open: false, type: null });
   const [batchDiscountValue, setBatchDiscountValue] = useState('');
   const [batchPriceMode, setBatchPriceMode] = useState('percentage');
   const [batchPriceValue, setBatchPriceValue] = useState('');
@@ -248,7 +248,8 @@ export default function TiendaNubeCatalog({
     {
       key: 'select',
       label: 'Sel',
-      width: '40px',
+      width: 48,
+      minWidth: 40,
       align: 'center',
       renderHeader: () => (
         <input
@@ -260,15 +261,15 @@ export default function TiendaNubeCatalog({
         />
       )
     },
-    { key: 'product_name', label: 'Producto / Variante', sortable: true },
-    { key: 'sku', label: 'SKU ERP', width: '130px', sortable: true },
-    { key: 'category_name', label: 'Categoría', width: '130px', sortable: true },
-    { key: 'cost', label: 'Costo ERP', width: '110px', align: 'right', sortable: true },
-    { key: 'applied_discount_pct', label: 'Descuento', width: '120px', align: 'center', sortable: true },
-    { key: 'price', label: 'Precio Tienda', width: '120px', align: 'right', sortable: true },
-    { key: 'stock', label: 'Stock', width: '90px', align: 'center', sortable: true },
-    { key: 'status', label: 'Estado', width: '85px', align: 'center', sortable: true },
-    { key: 'actions', label: 'Acciones', width: '80px', align: 'right' }
+    { key: 'product_name', label: 'Producto / Variante', width: 320, minWidth: 180, sortable: true },
+    { key: 'sku', label: 'SKU ERP', width: 140, minWidth: 90, sortable: true },
+    { key: 'category_name', label: 'Categoría', width: 220, minWidth: 120, sortable: true },
+    { key: 'cost', label: 'Costo ERP', width: 120, minWidth: 90, align: 'right', sortable: true },
+    { key: 'applied_discount_pct', label: 'Descuento', width: 130, minWidth: 95, align: 'center', sortable: true },
+    { key: 'price', label: 'Precio Tienda', width: 130, minWidth: 95, align: 'right', sortable: true },
+    { key: 'stock', label: 'Stock', width: 95, minWidth: 70, align: 'center', sortable: true },
+    { key: 'status', label: 'Estado', width: 95, minWidth: 75, align: 'center', sortable: true },
+    { key: 'actions', label: 'Acciones', width: 85, minWidth: 60, align: 'right' }
   ];
 
   return (
@@ -382,29 +383,29 @@ export default function TiendaNubeCatalog({
               </td>
 
               {/* Producto / Variante */}
-              <td className="py-2.5 px-3.5 max-w-xs">
-                <div className="font-bold text-[#141413] truncate tracking-tight">
+              <td className="py-2.5 px-3.5">
+                <div className="font-bold text-[#141413] truncate tracking-tight" title={v.product_name || v.display_title}>
                   {v.product_name || v.display_title}
                 </div>
-                <div className="flex items-center gap-2 text-[10.5px] text-[#73726c] font-mono mt-0.5">
+                <div className="flex items-center gap-2 text-[10.5px] text-[#73726c] font-mono mt-0.5 truncate">
                   {v.variant_str && (
-                    <span className="text-[#141413] font-bold bg-[#faf9f5] border border-[#e5e3dc] px-1.5 py-0.2 rounded">
+                    <span className="text-[#141413] font-bold bg-[#faf9f5] border border-[#e5e3dc] px-1.5 py-0.2 rounded truncate">
                       {v.variant_str}
                     </span>
                   )}
-                  <span>ID: #{v.variant_id}</span>
+                  <span className="shrink-0">ID: #{v.variant_id}</span>
                 </div>
               </td>
 
               {/* SKU */}
               <td className="py-2.5 px-3.5 font-mono text-[#73726c]">
-                <span className="bg-[#faf9f5] border border-[#e5e3dc] px-2 py-0.5 rounded text-[11px] font-semibold text-[#141413]">
+                <span className="bg-[#faf9f5] border border-[#e5e3dc] px-2 py-0.5 rounded text-[11px] font-semibold text-[#141413] block truncate">
                   {v.sku || 'Sin SKU'}
                 </span>
               </td>
 
               {/* Categoría */}
-              <td className="py-2.5 px-3.5 text-[#73726c] max-w-[130px] truncate" title={v.category_name}>
+              <td className="py-2.5 px-3.5 text-[#73726c]" title={v.category_name}>
                 <span className="bg-[#faf9f5] border border-[#e5e3dc] px-2 py-0.5 rounded text-[11px] truncate block">
                   {v.category_name || 'Sin Categoría'}
                 </span>

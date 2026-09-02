@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   ShieldCheck, 
   Search, 
@@ -27,7 +27,7 @@ export default function TiendaNubeAuditView({
   onToleranceChange 
 }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'DIFERENCIA', 'OK', 'SIN_ERP'
+  const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('diff_amount');
   const [sortOrder, setSortOrder] = useState('desc');
 
@@ -198,7 +198,8 @@ export default function TiendaNubeAuditView({
     {
       key: 'select',
       label: 'Sel',
-      width: '40px',
+      width: 48,
+      minWidth: 40,
       align: 'center',
       renderHeader: () => (
         <input
@@ -210,15 +211,15 @@ export default function TiendaNubeAuditView({
         />
       )
     },
-    { key: 'display_title', label: 'Variante & SKU', sortable: true },
-    { key: 'category_name', label: 'Categoría', width: '130px', sortable: true },
-    { key: 'cost', label: 'Costo Mostrador', width: '120px', align: 'right', sortable: true },
-    { key: 'applied_discount_pct', label: 'Factor Aplicado', width: '110px', align: 'center' },
-    { key: 'expected_price', label: 'Precio Esperado', width: '120px', align: 'right', sortable: true },
-    { key: 'price', label: 'Precio Tienda', width: '120px', align: 'right', sortable: true },
-    { key: 'diff_amount', label: 'Diferencia', width: '110px', align: 'right', sortable: true },
-    { key: 'audit_status', label: 'Dictamen', width: '110px', align: 'center', sortable: true },
-    { key: 'action', label: 'Acción', width: '90px', align: 'right' }
+    { key: 'display_title', label: 'Variante & SKU', width: 320, minWidth: 180, sortable: true },
+    { key: 'category_name', label: 'Categoría', width: 200, minWidth: 120, sortable: true },
+    { key: 'cost', label: 'Costo Mostrador', width: 125, minWidth: 90, align: 'right', sortable: true },
+    { key: 'applied_discount_pct', label: 'Factor Aplicado', width: 120, minWidth: 90, align: 'center' },
+    { key: 'expected_price', label: 'Precio Esperado', width: 125, minWidth: 90, align: 'right', sortable: true },
+    { key: 'price', label: 'Precio Tienda', width: 125, minWidth: 90, align: 'right', sortable: true },
+    { key: 'diff_amount', label: 'Diferencia', width: 110, minWidth: 85, align: 'right', sortable: true },
+    { key: 'audit_status', label: 'Dictamen', width: 115, minWidth: 85, align: 'center', sortable: true },
+    { key: 'action', label: 'Acción', width: 95, minWidth: 70, align: 'right' }
   ];
 
   return (
@@ -371,13 +372,13 @@ export default function TiendaNubeAuditView({
               </td>
 
               {/* Variante & SKU */}
-              <td className="py-2.5 px-3.5 max-w-xs">
-                <div className="font-bold text-[#141413] truncate tracking-tight">
+              <td className="py-2.5 px-3.5">
+                <div className="font-bold text-[#141413] truncate tracking-tight" title={item.product_name}>
                   {item.product_name}
                 </div>
-                <div className="flex items-center gap-2 text-[10.5px] text-[#73726c] font-mono mt-0.5">
+                <div className="flex items-center gap-2 text-[10.5px] text-[#73726c] font-mono mt-0.5 truncate">
                   {item.variant_str && (
-                    <span className="text-[#141413] font-bold bg-[#faf9f5] border border-[#e5e3dc] px-1.5 py-0.2 rounded">
+                    <span className="text-[#141413] font-bold bg-[#faf9f5] border border-[#e5e3dc] px-1.5 py-0.2 rounded truncate">
                       {item.variant_str}
                     </span>
                   )}
@@ -386,7 +387,7 @@ export default function TiendaNubeAuditView({
               </td>
 
               {/* Categoría */}
-              <td className="py-2.5 px-3.5 text-[#73726c] max-w-[130px] truncate" title={item.category_name}>
+              <td className="py-2.5 px-3.5 text-[#73726c]" title={item.category_name}>
                 <span className="bg-[#faf9f5] border border-[#e5e3dc] px-2 py-0.5 rounded text-[11px] truncate block">
                   {item.category_name}
                 </span>

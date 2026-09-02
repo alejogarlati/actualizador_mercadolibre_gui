@@ -99,14 +99,14 @@ export default function MeliCatalog({
   }, [sortedItems, currentPage, pageSize]);
 
   const columns = [
-    { key: 'id', label: 'Ítem / ID', width: '160px', sortable: true },
-    { key: 'sku', label: 'SKU ERP', width: '130px', sortable: true },
-    { key: 'title', label: 'Título de la Publicación', sortable: true },
-    { key: 'status', label: 'Estado', width: '90px', align: 'center', sortable: true },
-    { key: 'precio_mostrador', label: 'Costo Mostrador', width: '130px', align: 'right', sortable: true },
-    { key: 'price', label: 'Precio ML', width: '130px', align: 'right', sortable: true },
-    { key: 'margen', label: 'Margen', width: '90px', align: 'center', sortable: true },
-    { key: 'actions', label: 'Acción', width: '80px', align: 'right' }
+    { key: 'id', label: 'Ítem / ID', width: 170, minWidth: 120, sortable: true },
+    { key: 'sku', label: 'SKU ERP', width: 140, minWidth: 90, sortable: true },
+    { key: 'title', label: 'Título & Categoría de la Publicación', width: 340, minWidth: 180, sortable: true },
+    { key: 'status', label: 'Estado', width: 100, minWidth: 80, align: 'center', sortable: true },
+    { key: 'precio_mostrador', label: 'Costo Mostrador', width: 130, minWidth: 100, align: 'right', sortable: true },
+    { key: 'price', label: 'Precio ML', width: 130, minWidth: 100, align: 'right', sortable: true },
+    { key: 'margen', label: 'Margen', width: 100, minWidth: 75, align: 'center', sortable: true },
+    { key: 'actions', label: 'Acción', width: 80, minWidth: 60, align: 'right' }
   ];
 
   return (
@@ -199,19 +199,19 @@ export default function MeliCatalog({
                           e.stopPropagation();
                           toggleVariations(item.id);
                         }}
-                        className="p-1 hover:bg-[#ece9df] rounded text-[#73726c] transition-colors cursor-pointer"
+                        className="p-1 hover:bg-[#ece9df] rounded text-[#73726c] transition-colors cursor-pointer shrink-0"
                         title="Ver variaciones"
                       >
                         {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[#141413]" /> : <ChevronRight className="w-3.5 h-3.5" />}
                       </button>
                     ) : (
-                      <div className="w-5" />
+                      <div className="w-5 shrink-0" />
                     )}
 
                     {item.thumbnail ? (
-                      <img src={item.thumbnail} alt="" className="w-7 h-7 rounded-lg object-cover border border-[#e5e3dc]" />
+                      <img src={item.thumbnail} alt="" className="w-7 h-7 rounded-lg object-cover border border-[#e5e3dc] shrink-0" />
                     ) : (
-                      <div className="w-7 h-7 rounded-lg bg-[#f4f2eb] border border-[#e5e3dc]" />
+                      <div className="w-7 h-7 rounded-lg bg-[#f4f2eb] border border-[#e5e3dc] shrink-0" />
                     )}
 
                     <span className="truncate">{item.id}</span>
@@ -220,19 +220,19 @@ export default function MeliCatalog({
 
                 {/* SKU */}
                 <td className="py-2.5 px-3.5 font-mono text-[#73726c]">
-                  <span className="bg-[#faf9f5] border border-[#e5e3dc] px-2 py-0.5 rounded text-[11px] font-semibold text-[#141413]">
+                  <span className="bg-[#faf9f5] border border-[#e5e3dc] px-2 py-0.5 rounded text-[11px] font-semibold text-[#141413] block truncate">
                     {item.sku || 'Sin SKU'}
                   </span>
                 </td>
 
-                {/* Title */}
-                <td className="py-2.5 px-3.5 max-w-xs">
-                  <div className="font-bold text-[#141413] truncate tracking-tight">
+                {/* Title & Category */}
+                <td className="py-2.5 px-3.5">
+                  <div className="font-bold text-[#141413] tracking-tight truncate" title={item.title}>
                     {item.title}
                   </div>
-                  <div className="text-[10px] text-[#73726c] flex items-center gap-1 mt-0.5 truncate" title={item.category_name || item.category_id}>
+                  <div className="text-[10.5px] text-[#73726c] flex items-center gap-1 mt-0.5 truncate" title={item.category_name || item.category_id}>
                     <Folder className="w-3 h-3 text-[#9c998f] shrink-0" />
-                    <span>{item.category_name || item.category_id}</span>
+                    <span className="truncate">{item.category_name || item.category_id}</span>
                   </div>
                 </td>
 
@@ -291,7 +291,7 @@ export default function MeliCatalog({
                       <div className="divide-y divide-[#ece9df]">
                         {item.variations.map((v) => (
                           <div key={v.id} className="py-1.5 flex items-center justify-between text-xs font-mono">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 truncate">
                               <span className="bg-[#faf9f5] border border-[#e5e3dc] px-2 py-0.5 rounded text-[11px] text-[#73726c]">
                                 ID #{v.id}
                               </span>
@@ -299,12 +299,12 @@ export default function MeliCatalog({
                                 SKU: {v.seller_custom_field || 'N/A'}
                               </span>
                               {v.attribute_combinations && v.attribute_combinations.length > 0 && (
-                                <span className="text-[#73726c] text-[11px]">
+                                <span className="text-[#73726c] text-[11px] truncate">
                                   ({v.attribute_combinations.map(a => `${a.name}: ${a.value_name}`).join(', ')})
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-4 shrink-0">
                               <span className="text-[#73726c]">Stock: <strong className="text-[#141413]">{v.available_quantity}</strong></span>
                               <span className="font-bold text-[#141413]">${v.price?.toLocaleString()}</span>
                             </div>

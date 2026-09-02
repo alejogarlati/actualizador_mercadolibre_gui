@@ -19,7 +19,7 @@ export default function TiendaNubeDashboard({
   health, 
   metrics, 
   onRefreshCatalog, 
-  onOpenSync, 
+  onNavigateToSync, 
   onOpenCreateModal, 
   onNavigateToCatalog,
   loading = false 
@@ -118,9 +118,9 @@ export default function TiendaNubeDashboard({
                 variant="primary"
                 size="sm"
                 icon={UploadCloud}
-                onClick={onOpenSync}
+                onClick={onNavigateToSync}
               >
-                Sincronizar Ahora
+                Abrir Sincronizador ERP
               </Button>
             </>
           }

@@ -21,8 +21,8 @@ import TiendaNubeDashboard from './components/tiendanube/TiendaNubeDashboard';
 import TiendaNubeCatalog from './components/tiendanube/TiendaNubeCatalog';
 import TiendaNubeCategoriesView from './components/tiendanube/TiendaNubeCategoriesView';
 import TiendaNubeAuditView from './components/tiendanube/TiendaNubeAuditView';
+import TiendaNubeSyncView from './components/tiendanube/TiendaNubeSyncView';
 import TiendaNubeProductModal from './components/tiendanube/TiendaNubeProductModal';
-import TiendaNubeSyncModal from './components/tiendanube/TiendaNubeSyncModal';
 
 // Servicios de API
 import {
@@ -128,7 +128,6 @@ export default function App() {
   // Modales Tiendanube
   const [tnProductModalOpen, setTnProductModalOpen] = useState(false);
   const [tnEditingProduct, setTnEditingProduct] = useState(null);
-  const [tnSyncModalOpen, setTnSyncModalOpen] = useState(false);
 
   // Health refresh global
   const [healthRefreshing, setHealthRefreshing] = useState(false);
@@ -348,10 +347,10 @@ export default function App() {
     }
   };
 
-  const handleRunMeliSync = async () => {
+  const handleRunMeliSync = async (margen = 0.0) => {
     try {
-      await executeSync(0.0);
-      addToast('info', 'Sincronización Iniciada', 'Proceso en segundo plano ejecutándose...');
+      await executeSync(margen);
+      addToast('info', 'Sincronización Iniciada', 'Actualizando precios en Mercado Libre en segundo plano...');
     } catch (err) {
       addToast('error', 'Fallo al Iniciar Sincronización', err.message);
     }
@@ -477,13 +476,12 @@ export default function App() {
   return (
     <div className="flex h-screen w-screen bg-[#faf9f5] text-[#141413] font-sans antialiased overflow-hidden">
       
-      {/* 1. SIDEBAR UNIFICADO */}
+      {/* 1. SIDEBAR UNIFICADO & COLLAPSIBLE */}
       <Sidebar
         selectedPlatform={selectedPlatform}
         activeTab={currentActiveTab}
         onSelectTab={setCurrentActiveTab}
         onBackToHub={() => setSelectedPlatform(null)}
-        onOpenSyncModal={isTN ? () => setTnSyncModalOpen(true) : null}
       />
 
       {/* 2. ÁREA PRINCIPAL */}
@@ -574,7 +572,7 @@ export default function App() {
                   health={tnHealth}
                   metrics={tnMetrics}
                   onRefreshCatalog={() => loadTnCatalog(true)}
-                  onOpenSync={() => setTnSyncModalOpen(true)}
+                  onNavigateToSync={() => setActiveTabTN('sync')}
                   onOpenCreateModal={() => {
                     setTnEditingProduct(null);
                     setTnProductModalOpen(true);
@@ -625,6 +623,16 @@ export default function App() {
                   }}
                 />
               )}
+
+              {activeTabTN === 'sync' && (
+                <TiendaNubeSyncView
+                  onAddToast={addToast}
+                  onSyncFinished={() => {
+                    loadTnCatalog(false);
+                    loadTnDashboardData();
+                  }}
+                />
+              )}
             </>
           )}
 
@@ -656,15 +664,6 @@ export default function App() {
         onSave={handleSaveTnProduct}
         productData={tnEditingProduct}
         categories={tnCategories}
-      />
-
-      <TiendaNubeSyncModal
-        isOpen={tnSyncModalOpen}
-        onClose={() => setTnSyncModalOpen(false)}
-        onSyncFinished={() => {
-          loadTnCatalog(false);
-          loadTnDashboardData();
-        }}
       />
 
       {/* 5. SISTEMA DE TOASTS FLOTANTES */}

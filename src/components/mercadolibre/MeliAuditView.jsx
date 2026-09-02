@@ -122,12 +122,12 @@ export default function MeliAuditView({
   }, [sortedItems, currentPage, pageSize]);
 
   const columns = [
-    { key: 'title', label: 'Publicación & SKU', sortable: true },
-    { key: 'price_ml', label: 'Precio ML', width: '130px', align: 'right', sortable: true },
-    { key: 'comision_porcentaje', label: 'Comisión %', width: '100px', align: 'center', sortable: true },
-    { key: 'neto_a_recibir', label: 'Neto Recibido', width: '130px', align: 'right', sortable: true },
-    { key: 'precio_mostrador_erp', label: 'ERP Mostrador', width: '130px', align: 'right', sortable: true },
-    { key: 'status_evaluacion', label: 'Dictamen', width: '120px', align: 'center', sortable: true }
+    { key: 'title', label: 'Publicación & SKU', width: 360, minWidth: 180, sortable: true },
+    { key: 'price_ml', label: 'Precio ML', width: 130, minWidth: 100, align: 'right', sortable: true },
+    { key: 'comision_porcentaje', label: 'Comisión %', width: 110, minWidth: 85, align: 'center', sortable: true },
+    { key: 'neto_a_recibir', label: 'Neto Recibido', width: 130, minWidth: 100, align: 'right', sortable: true },
+    { key: 'precio_mostrador_erp', label: 'ERP Mostrador', width: 130, minWidth: 100, align: 'right', sortable: true },
+    { key: 'status_evaluacion', label: 'Dictamen', width: 130, minWidth: 100, align: 'center', sortable: true }
   ];
 
   return (
@@ -272,11 +272,11 @@ export default function MeliAuditView({
               className="hover:bg-[#faf9f5] cursor-pointer transition-colors group"
               title="Haz clic para ver el desglose detallado de costos"
             >
-              <td className="py-2.5 px-3.5 max-w-xs">
-                <div className="font-bold text-[#141413] truncate tracking-tight">
+              <td className="py-2.5 px-3.5">
+                <div className="font-bold text-[#141413] truncate tracking-tight" title={item.title}>
                   {item.title}
                 </div>
-                <div className="text-[10px] text-[#73726c] font-mono mt-0.5">
+                <div className="text-[10.5px] text-[#73726c] font-mono mt-0.5 truncate">
                   SKU: <strong className="text-[#141413]">{item.sku || 'N/A'}</strong> | ID: {item.item_id}
                 </div>
               </td>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   RefreshCw, 
@@ -11,203 +11,148 @@ import {
   Settings as SettingsIcon, 
   ArrowLeft, 
   ShoppingBag, 
-  LogOut 
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 
 export default function Sidebar({
   selectedPlatform,
   activeTab,
   onSelectTab,
-  onBackToHub,
-  onOpenSyncModal
+  onBackToHub
 }) {
   const isTN = selectedPlatform === 'tiendanube';
 
-  return (
-    <aside className="w-68 bg-white border-r border-[#e5e3dc] flex flex-col p-4 shrink-0 justify-between select-none">
-      <div className="flex flex-col gap-5">
-        
-        {/* BOTÓN VOLVER AL HUB */}
-        <button
-          onClick={onBackToHub}
-          className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl text-xs font-bold text-[#73726c] bg-[#faf9f5] hover:bg-[#f2efe6] hover:text-[#141413] border border-[#e5e3dc] transition-all cursor-pointer"
-          title="Volver a la selección de canales"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Cambiar de Canal</span>
-        </button>
+  const [collapsed, setCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed_mode') === 'true';
+  });
 
-        {/* LOGO & BRAND */}
-        <div className="flex items-center gap-3 pb-3 border-b border-[#ece9df]">
-          <div className="p-2 bg-[#141413] text-white rounded-xl shadow-xs flex items-center justify-center border border-[#141413]">
-            {isTN ? <ShoppingBag className="w-5 h-5" /> : <RefreshCw className="w-5 h-5" />}
+  const toggleCollapsed = () => {
+    setCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed_mode', String(next));
+      return next;
+    });
+  };
+
+  const navItems = isTN ? [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'items', label: 'Catálogo de Variantes', icon: Layers },
+    { id: 'categories', label: 'Reglas por Categoría', icon: Percent },
+    { id: 'audit', label: 'Auditoría de Precios', icon: ShieldCheck },
+    { id: 'sync', label: 'Sincronizador ERP', icon: UploadCloud }
+  ] : [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'items', label: 'Publicaciones', icon: PackageSearch },
+    { id: 'sync', label: 'Sincronizador ERP', icon: UploadCloud },
+    { id: 'audit', label: 'Auditoría de Precios', icon: ShieldCheck },
+    { id: 'calculator', label: 'Calculadora & Simulador', icon: Calculator },
+    { id: 'rules', label: 'Configuración', icon: SettingsIcon }
+  ];
+
+  return (
+    <aside className={`${
+      collapsed ? 'w-18' : 'w-64'
+    } bg-white border-r border-[#e5e3dc] flex flex-col p-3 shrink-0 justify-between select-none transition-all duration-200 z-20`}>
+      <div className="flex flex-col gap-4">
+        
+        {/* CABECERA CON BOTÓN COLAPSO & BRAND */}
+        <div className="flex flex-col gap-3 pb-3 border-b border-[#ece9df]">
+          <div className="flex items-center justify-between gap-2">
+            {!collapsed && (
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="p-2 bg-[#141413] text-white rounded-xl shadow-xs flex items-center justify-center border border-[#141413] shrink-0">
+                  {isTN ? <ShoppingBag className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
+                </div>
+                <div className="min-w-0">
+                  <h1 className="font-black text-xs text-[#141413] leading-tight tracking-tight truncate">
+                    {isTN ? 'Sync Tiendanube' : 'Sync MeLi'}
+                  </h1>
+                  <p className="text-[9.5px] text-[#73726c] font-bold uppercase tracking-wider truncate">
+                    Corralón Aconquija
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {collapsed && (
+              <div className="mx-auto p-2 bg-[#141413] text-white rounded-xl shadow-xs flex items-center justify-center border border-[#141413]">
+                {isTN ? <ShoppingBag className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />}
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              className={`p-1.5 rounded-lg text-[#73726c] hover:text-[#141413] hover:bg-[#f4f2eb] border border-[#e5e3dc] transition-colors cursor-pointer shrink-0 ${
+                collapsed ? 'mt-1 w-full flex items-center justify-center' : ''
+              }`}
+              title={collapsed ? 'Expandir barra lateral' : 'Colapsar barra lateral'}
+            >
+              {collapsed ? <PanelLeftOpen className="w-3.5 h-3.5" /> : <PanelLeftClose className="w-3.5 h-3.5" />}
+            </button>
           </div>
-          <div>
-            <h1 className="font-black text-sm text-[#141413] leading-tight tracking-tight">
-              {isTN ? 'Sync Tiendanube' : 'Sync MeLi'}
-            </h1>
-            <p className="text-[10px] text-[#73726c] font-bold uppercase tracking-wider">
-              {isTN ? 'Nuvemshop • Corralón' : 'Mercado Libre • Corralón'}
-            </p>
-          </div>
+
+          {/* BOTÓN VOLVER AL HUB */}
+          <button
+            onClick={onBackToHub}
+            className={`flex items-center justify-center gap-2 w-full py-1.5 px-2 rounded-xl text-xs font-bold text-[#73726c] bg-[#faf9f5] hover:bg-[#f2efe6] hover:text-[#141413] border border-[#e5e3dc] transition-all cursor-pointer ${
+              collapsed ? 'px-0' : ''
+            }`}
+            title="Volver a la selección de canales"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+            {!collapsed && <span className="truncate">Cambiar Canal</span>}
+          </button>
         </div>
 
-        {/* MENÚ DE SECCIONES UNIFICADO */}
+        {/* MENÚ DE NAVEGACIÓN */}
         <nav className="flex flex-col gap-1">
-          {isTN ? (
-            <>
-              <button 
+          {navItems.map(item => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSelectTab(item.id)}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'dashboard' 
+                  collapsed ? 'justify-center px-0' : ''
+                } ${
+                  isActive 
                     ? 'bg-[#141413] text-white shadow-xs' 
                     : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
                 }`}
-                onClick={() => onSelectTab('dashboard')}
+                title={item.label}
               >
-                <LayoutDashboard className="w-4 h-4 shrink-0" />
-                <span>Dashboard</span>
+                <Icon className="w-4 h-4 shrink-0" />
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </button>
-
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'items' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onSelectTab('items')}
-              >
-                <Layers className="w-4 h-4 shrink-0" />
-                <span>Catálogo de Variantes</span>
-              </button>
-
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'categories' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onSelectTab('categories')}
-              >
-                <Percent className="w-4 h-4 shrink-0" />
-                <span>Reglas por Categoría</span>
-              </button>
-
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'audit' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onSelectTab('audit')}
-              >
-                <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>Auditoría de Precios</span>
-              </button>
-
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'sync' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onOpenSyncModal ? onOpenSyncModal() : onSelectTab('sync')}
-              >
-                <UploadCloud className="w-4 h-4 shrink-0" />
-                <span>Sincronizador ERP</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'dashboard' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onSelectTab('dashboard')}
-              >
-                <LayoutDashboard className="w-4 h-4 shrink-0" />
-                <span>Dashboard</span>
-              </button>
-
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'items' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onSelectTab('items')}
-              >
-                <PackageSearch className="w-4 h-4 shrink-0" />
-                <span>Publicaciones</span>
-              </button>
-
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'sync' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onSelectTab('sync')}
-              >
-                <UploadCloud className="w-4 h-4 shrink-0" />
-                <span>Sincronizador ERP</span>
-              </button>
-
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'audit' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onSelectTab('audit')}
-              >
-                <ShieldCheck className="w-4 h-4 shrink-0" />
-                <span>Auditoría de Precios</span>
-              </button>
-
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'calculator' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onSelectTab('calculator')}
-              >
-                <Calculator className="w-4 h-4 shrink-0" />
-                <span>Calculadora & Simulador</span>
-              </button>
-
-              <button 
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                  activeTab === 'rules' 
-                    ? 'bg-[#141413] text-white shadow-xs' 
-                    : 'text-[#73726c] hover:bg-[#faf9f5] hover:text-[#141413]'
-                }`}
-                onClick={() => onSelectTab('rules')}
-              >
-                <SettingsIcon className="w-4 h-4 shrink-0" />
-                <span>Configuración</span>
-              </button>
-            </>
-          )}
+            );
+          })}
         </nav>
       </div>
 
       {/* FOOTER */}
-      <div className="pt-3 border-t border-[#ece9df] flex items-center justify-between gap-2">
-        <button
-          onClick={() => onSelectTab('rules')}
-          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-[#73726c] bg-[#faf9f5] hover:bg-[#f2efe6] hover:text-[#141413] border border-[#e5e3dc] transition-colors cursor-pointer"
-          title="Configuración general"
-        >
-          <SettingsIcon className="w-3.5 h-3.5" />
-          <span>Ajustes</span>
-        </button>
+      <div className={`pt-3 border-t border-[#ece9df] flex items-center gap-2 ${collapsed ? 'flex-col' : 'justify-between'}`}>
+        {!isTN && (
+          <button
+            onClick={() => onSelectTab('rules')}
+            className={`flex items-center justify-center gap-2 p-2 rounded-xl text-xs font-bold text-[#73726c] bg-[#faf9f5] hover:bg-[#f2efe6] hover:text-[#141413] border border-[#e5e3dc] transition-colors cursor-pointer ${
+              collapsed ? 'w-full' : 'flex-1'
+            }`}
+            title="Ajustes y Configuración"
+          >
+            <SettingsIcon className="w-3.5 h-3.5 shrink-0" />
+            {!collapsed && <span className="truncate">Ajustes</span>}
+          </button>
+        )}
 
         <button
           onClick={onBackToHub}
-          className="p-2 rounded-xl text-[#73726c] hover:text-[#141413] hover:bg-[#faf9f5] border border-[#e5e3dc] transition-all cursor-pointer shrink-0"
+          className={`p-2 rounded-xl text-[#73726c] hover:text-[#141413] hover:bg-[#faf9f5] border border-[#e5e3dc] transition-all cursor-pointer shrink-0 ${
+            collapsed ? 'w-full flex items-center justify-center' : ''
+          }`}
           title="Cambiar de plataforma / Salir"
         >
           <LogOut className="w-3.5 h-3.5" />
