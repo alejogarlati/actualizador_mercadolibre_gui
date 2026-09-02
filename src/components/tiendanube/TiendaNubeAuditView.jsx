@@ -46,9 +46,10 @@ export default function TiendaNubeAuditView({
   const filteredItems = useMemo(() => {
     return rawItems.filter(item => {
       const matchSearch = 
-        item.display_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.category_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.product_name && item.product_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.display_title && item.display_title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.sku && item.sku.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.category_name && item.category_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         String(item.variant_id).includes(searchTerm);
 
       const matchStatus = 
@@ -96,11 +97,11 @@ export default function TiendaNubeAuditView({
         delete next[item.variant_id];
       } else {
         next[item.variant_id] = {
-          product_id: item.product_id,
-          variant_id: item.variant_id,
-          new_price: item.expected_price,
+          product_id: parseInt(item.product_id),
+          variant_id: parseInt(item.variant_id),
+          new_price: parseFloat(item.expected_price),
           sku: item.sku,
-          display_title: item.display_title
+          display_title: item.display_title || item.product_name
         };
       }
       return next;
@@ -118,11 +119,11 @@ export default function TiendaNubeAuditView({
       } else {
         selectable.forEach(i => {
           next[i.variant_id] = {
-            product_id: i.product_id,
-            variant_id: i.variant_id,
-            new_price: i.expected_price,
+            product_id: parseInt(i.product_id),
+            variant_id: parseInt(i.variant_id),
+            new_price: parseFloat(i.expected_price),
             sku: i.sku,
-            display_title: i.display_title
+            display_title: i.display_title || i.product_name
           };
         });
       }
@@ -135,11 +136,11 @@ export default function TiendaNubeAuditView({
     const map = {};
     diffs.forEach(i => {
       map[i.variant_id] = {
-        product_id: i.product_id,
-        variant_id: i.variant_id,
-        new_price: i.expected_price,
+        product_id: parseInt(i.product_id),
+        variant_id: parseInt(i.variant_id),
+        new_price: parseFloat(i.expected_price),
         sku: i.sku,
-        display_title: i.display_title
+        display_title: i.display_title || i.product_name
       };
     });
     setSelectedMap(map);
@@ -153,7 +154,7 @@ export default function TiendaNubeAuditView({
     setFixingId(item.variant_id);
     try {
       if (onFixPrice) {
-        await onFixPrice(item.product_id, item.variant_id, item.expected_price);
+        await onFixPrice(parseInt(item.product_id), parseInt(item.variant_id), parseFloat(item.expected_price));
       }
       setSelectedMap(prev => {
         const next = { ...prev };
@@ -492,7 +493,7 @@ export default function TiendaNubeAuditView({
               loading={isBatchFixing}
               onClick={handleExecuteBatchFix}
             >
-              {isBatchFixing ? 'Aplicando...' : `Corregir ${selectedCount} productos`}
+              {isBatchFixing ? 'Aplicando corrección...' : `Corregir ${selectedCount} productos`}
             </Button>
 
             <button

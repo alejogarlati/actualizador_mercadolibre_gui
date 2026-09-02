@@ -24,6 +24,9 @@ import Table from '../ui/Table';
 import Pagination from '../ui/Pagination';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
+import Modal from '../ui/Modal';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
 
 const SORT_ACCESSORS = {
   product_name: (item) => item.product_name || item.display_title || '',
@@ -72,7 +75,7 @@ export default function TiendaNubeCatalog({
   const [pageSize, setPageSize] = useState(25);
 
   // Modal para Acciones Masivas
-  const [batchActionModal, setBatchActionModal] = useState({ open: false, type: null });
+  const [batchActionModal, setBatchActionModal] = useState({ open: false, type: null }); // 'discount' | 'price'
   const [batchDiscountValue, setBatchDiscountValue] = useState('');
   const [batchPriceMode, setBatchPriceMode] = useState('percentage');
   const [batchPriceValue, setBatchPriceValue] = useState('');
@@ -164,11 +167,11 @@ export default function TiendaNubeCatalog({
         delete next[item.variant_id];
       } else {
         next[item.variant_id] = {
-          product_id: item.product_id,
-          variant_id: item.variant_id,
+          product_id: parseInt(item.product_id),
+          variant_id: parseInt(item.variant_id),
           sku: item.sku,
-          price: item.price,
-          cost: item.cost
+          price: parseFloat(item.price) || 0.0,
+          cost: parseFloat(item.cost) || 0.0
         };
       }
       return next;
@@ -184,11 +187,11 @@ export default function TiendaNubeCatalog({
       } else {
         paginatedVariants.forEach(i => {
           next[i.variant_id] = {
-            product_id: i.product_id,
-            variant_id: i.variant_id,
+            product_id: parseInt(i.product_id),
+            variant_id: parseInt(i.variant_id),
             sku: i.sku,
-            price: i.price,
-            cost: i.cost
+            price: parseFloat(i.price) || 0.0,
+            cost: parseFloat(i.cost) || 0.0
           };
         });
       }
@@ -237,6 +240,7 @@ export default function TiendaNubeCatalog({
       }
       setBatchActionModal({ open: false, type: null });
       setSelectedVariantsMap({});
+      if (onRefresh) onRefresh();
     } finally {
       setIsSubmittingBatch(false);
     }
@@ -548,7 +552,7 @@ export default function TiendaNubeCatalog({
           <div className="flex items-center gap-2 pr-4 border-r border-white/20">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs font-mono font-bold">
-              {selectedCount} {selectedCount === 1 ? 'variante' : 'variantes'}
+              {selectedCount} {selectedCount === 1 ? 'variante seleccionada' : 'variantes seleccionadas'}
             </span>
           </div>
 
@@ -557,7 +561,10 @@ export default function TiendaNubeCatalog({
               variant="secondary"
               size="sm"
               icon={Percent}
-              onClick={() => setBatchActionModal({ open: true, type: 'discount' })}
+              onClick={() => {
+                setBatchDiscountValue('');
+                setBatchActionModal({ open: true, type: 'discount' });
+              }}
             >
               Ajustar Descuento
             </Button>
@@ -566,7 +573,10 @@ export default function TiendaNubeCatalog({
               variant="secondary"
               size="sm"
               icon={DollarSign}
-              onClick={() => setBatchActionModal({ open: true, type: 'price' })}
+              onClick={() => {
+                setBatchPriceValue('');
+                setBatchActionModal({ open: true, type: 'price' });
+              }}
             >
               Modificar Precio
             </Button>
@@ -580,6 +590,84 @@ export default function TiendaNubeCatalog({
           </div>
         </div>
       )}
+
+      {/* MODAL DE ACCIONES MASIVAS */}
+      <Modal
+        isOpen={batchActionModal.open}
+        onClose={() => setBatchActionModal({ open: false, type: null })}
+        title={
+          batchActionModal.type === 'discount' 
+            ? `Ajustar Descuento en Lote (${selectedCount} variantes)`
+            : `Modificar Precio en Lote (${selectedCount} variantes)`
+        }
+        subtitle="Aplica cambios masivos simultáneamente sobre los ítems seleccionados"
+        icon={batchActionModal.type === 'discount' ? Percent : DollarSign}
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              size="md"
+              onClick={() => setBatchActionModal({ open: false, type: null })}
+              disabled={isSubmittingBatch}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={handleExecuteBatchAction}
+              loading={isSubmittingBatch}
+            >
+              Aplicar a {selectedCount} variantes
+            </Button>
+          </>
+        }
+      >
+        {batchActionModal.type === 'discount' ? (
+          <div className="flex flex-col gap-4 text-xs">
+            <p className="text-[#73726c] leading-relaxed">
+              Ingresa el porcentaje de descuento personalizado para las variantes seleccionadas. Si lo dejas vacío, se restablecerá a <strong>Automático (Heredado de la categoría)</strong>.
+            </p>
+
+            <Input
+              label="Porcentaje de Descuento (%)"
+              type="number"
+              step="0.5"
+              placeholder="Ej: 15 (o vacío para heredar de categoría)"
+              value={batchDiscountValue}
+              onChange={(e) => setBatchDiscountValue(e.target.value)}
+              suffix="%"
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 text-xs">
+            <Select
+              label="Modo de Actualización de Precio"
+              value={batchPriceMode}
+              onChange={(e) => setBatchPriceMode(e.target.value)}
+              options={[
+                { value: 'percentage', label: 'Porcentaje sobre precio actual (%)' },
+                { value: 'fixed_add', label: 'Monto fijo a sumar o restar ($)' },
+                { value: 'fixed_set', label: 'Precio final fijo exacto ($)' }
+              ]}
+            />
+
+            <Input
+              label={
+                batchPriceMode === 'percentage' ? 'Variación Porcentual (%)' :
+                batchPriceMode === 'fixed_add' ? 'Monto a Sumar / Restar ($)' :
+                'Nuevo Precio Fijo ($)'
+              }
+              type="number"
+              step={batchPriceMode === 'percentage' ? '0.5' : '10'}
+              placeholder={batchPriceMode === 'percentage' ? 'Ej: 10 o -5' : 'Ej: 5000'}
+              value={batchPriceValue}
+              onChange={(e) => setBatchPriceValue(e.target.value)}
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
