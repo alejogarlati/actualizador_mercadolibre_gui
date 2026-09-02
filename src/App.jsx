@@ -5,6 +5,7 @@ import ToastContainer from './components/ui/Toast';
 import PlatformSelectorScreen from './components/common/PlatformSelectorScreen';
 import Sidebar from './components/common/Sidebar';
 import Header from './components/common/Header';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 
 // Módulos Mercado Libre
 import MeliDashboard from './components/mercadolibre/MeliDashboard';
@@ -559,139 +560,142 @@ export default function App() {
             onToggleTheme={toggleTheme}
           />
 
-          {/* VISTAS DE MERCADO LIBRE */}
-          {!isTN && (
-            <>
-              {activeTabMeli === 'dashboard' && (
-                <MeliDashboard
-                  health={meliHealth}
-                  stats={meliStats}
-                  analyticsData={meliAnalytics}
-                  onNavigateToTab={setActiveTabMeli}
-                  onRefreshHealth={loadMeliDashboardData}
-                  refreshing={healthRefreshing}
-                />
-              )}
+          {/* CONTENEDOR DE VISTAS CON ERROR BOUNDARY */}
+          <ErrorBoundary key={`${selectedPlatform}-${currentActiveTab}`}>
+            {/* VISTAS DE MERCADO LIBRE */}
+            {!isTN && (
+              <>
+                {activeTabMeli === 'dashboard' && (
+                  <MeliDashboard
+                    health={meliHealth}
+                    stats={meliStats}
+                    analyticsData={meliAnalytics}
+                    onNavigateToTab={setActiveTabMeli}
+                    onRefreshHealth={loadMeliDashboardData}
+                    refreshing={healthRefreshing}
+                  />
+                )}
 
-              {activeTabMeli === 'items' && (
-                <MeliCatalog
-                  items={meliItems}
-                  loading={meliLoadingCatalog}
-                  onRefresh={() => loadMeliCatalog(true)}
-                  onOpenEdit={(item) => setEditingMeliItem(item)}
-                  lastUpdated={meliLastUpdatedCatalog}
-                />
-              )}
+                {activeTabMeli === 'items' && (
+                  <MeliCatalog
+                    items={meliItems}
+                    loading={meliLoadingCatalog}
+                    onRefresh={() => loadMeliCatalog(true)}
+                    onOpenEdit={(item) => setEditingMeliItem(item)}
+                    lastUpdated={meliLastUpdatedCatalog}
+                  />
+                )}
 
-              {activeTabMeli === 'sync' && (
-                <MeliSyncView
-                  onRunSync={handleRunMeliSync}
-                  syncProgress={meliSyncProgress}
-                  onAddToast={addToast}
-                />
-              )}
+                {activeTabMeli === 'sync' && (
+                  <MeliSyncView
+                    onRunSync={handleRunMeliSync}
+                    syncProgress={meliSyncProgress}
+                    onAddToast={addToast}
+                  />
+                )}
 
-              {activeTabMeli === 'audit' && (
-                <MeliAuditView
-                  auditReport={meliAuditReport}
-                  loading={meliLoadingAudit}
-                  onRefresh={() => loadMeliAudit(meliAuditTolerance)}
-                  tolerancePct={meliAuditTolerance}
-                  onToleranceChange={(newTol) => {
-                    setMeliAuditTolerance(newTol);
-                    loadMeliAudit(newTol);
-                  }}
-                  onInspectItem={(item) => setInspectingMeliAuditItem(item)}
-                  lastUpdated={meliLastUpdatedAudit}
-                />
-              )}
+                {activeTabMeli === 'audit' && (
+                  <MeliAuditView
+                    auditReport={meliAuditReport}
+                    loading={meliLoadingAudit}
+                    onRefresh={() => loadMeliAudit(meliAuditTolerance)}
+                    tolerancePct={meliAuditTolerance}
+                    onToleranceChange={(newTol) => {
+                      setMeliAuditTolerance(newTol);
+                      loadMeliAudit(newTol);
+                    }}
+                    onInspectItem={(item) => setInspectingMeliAuditItem(item)}
+                    lastUpdated={meliLastUpdatedAudit}
+                  />
+                )}
 
-              {activeTabMeli === 'calculator' && (
-                <MeliCalculator onAddToast={addToast} />
-              )}
+                {activeTabMeli === 'calculator' && (
+                  <MeliCalculator onAddToast={addToast} />
+                )}
 
-              {activeTabMeli === 'rules' && (
-                <MeliSettingsView
-                  settingsForm={meliSettings}
-                  setSettingsForm={setMeliSettings}
-                  onSaveSettings={handleSaveMeliSettings}
-                  saving={meliSavingSettings}
-                />
-              )}
-            </>
-          )}
+                {activeTabMeli === 'rules' && (
+                  <MeliSettingsView
+                    settingsForm={meliSettings}
+                    setSettingsForm={setMeliSettings}
+                    onSaveSettings={handleSaveMeliSettings}
+                    saving={meliSavingSettings}
+                  />
+                )}
+              </>
+            )}
 
-          {/* VISTAS DE TIENDANUBE */}
-          {isTN && (
-            <>
-              {activeTabTN === 'dashboard' && (
-                <TiendaNubeDashboard
-                  health={tnHealth}
-                  metrics={tnMetrics}
-                  onRefreshCatalog={() => loadTnCatalog(true)}
-                  onNavigateToSync={() => setActiveTabTN('sync')}
-                  onOpenCreateModal={() => {
-                    setTnEditingProduct(null);
-                    setTnProductModalOpen(true);
-                  }}
-                  onNavigateToCatalog={() => setActiveTabTN('items')}
-                  loading={tnLoadingCatalog}
-                />
-              )}
+            {/* VISTAS DE TIENDANUBE */}
+            {isTN && (
+              <>
+                {activeTabTN === 'dashboard' && (
+                  <TiendaNubeDashboard
+                    health={tnHealth}
+                    metrics={tnMetrics}
+                    onRefreshCatalog={() => loadTnCatalog(true)}
+                    onNavigateToSync={() => setActiveTabTN('sync')}
+                    onOpenCreateModal={() => {
+                      setTnEditingProduct(null);
+                      setTnProductModalOpen(true);
+                    }}
+                    onNavigateToCatalog={() => setActiveTabTN('items')}
+                    loading={tnLoadingCatalog}
+                  />
+                )}
 
-              {activeTabTN === 'items' && (
-                <TiendaNubeCatalog
-                  variants={tnVariants}
-                  categories={tnCategories}
-                  loading={tnLoadingCatalog}
-                  onRefresh={() => loadTnCatalog(true)}
-                  onOpenCreate={() => {
-                    setTnEditingProduct(null);
-                    setTnProductModalOpen(true);
-                  }}
-                  onOpenEdit={handleOpenEditTnProduct}
-                  onDelete={handleDeleteTnProduct}
-                  onSaveVariantOverride={handleSaveTnVariantOverride}
-                  onBatchUpdateOverrides={handleBatchUpdateTnOverrides}
-                  onBatchUpdatePrices={handleBatchUpdatePrices}
-                />
-              )}
+                {activeTabTN === 'items' && (
+                  <TiendaNubeCatalog
+                    variants={tnVariants}
+                    categories={tnCategories}
+                    loading={tnLoadingCatalog}
+                    onRefresh={() => loadTnCatalog(true)}
+                    onOpenCreate={() => {
+                      setTnEditingProduct(null);
+                      setTnProductModalOpen(true);
+                    }}
+                    onOpenEdit={handleOpenEditTnProduct}
+                    onDelete={handleDeleteTnProduct}
+                    onSaveVariantOverride={handleSaveTnVariantOverride}
+                    onBatchUpdateOverrides={handleBatchUpdateTnOverrides}
+                    onBatchUpdatePrices={handleBatchUpdateTnPrices}
+                  />
+                )}
 
-              {activeTabTN === 'categories' && (
-                <TiendaNubeCategoriesView
-                  categoriesTree={tnCategoriesTree}
-                  loading={tnLoadingCategories}
-                  onRefresh={() => loadTnCategories(true)}
-                  onSaveCategoryDiscount={handleSaveTnCategoryDiscount}
-                />
-              )}
+                {activeTabTN === 'categories' && (
+                  <TiendaNubeCategoriesView
+                    categoriesTree={tnCategoriesTree}
+                    loading={tnLoadingCategories}
+                    onRefresh={() => loadTnCategories(true)}
+                    onSaveCategoryDiscount={handleSaveTnCategoryDiscount}
+                  />
+                )}
 
-              {activeTabTN === 'audit' && (
-                <TiendaNubeAuditView
-                  auditReport={tnAuditReport}
-                  loading={tnLoadingAudit}
-                  onRefresh={() => loadTnAudit(tnAuditTolerance)}
-                  onFixPrice={handleFixTnSinglePrice}
-                  onFixBatch={handleFixTnBatchPrices}
-                  tolerancePct={tnAuditTolerance}
-                  onToleranceChange={(newTol) => {
-                    setTnAuditTolerance(newTol);
-                    loadTnAudit(newTol);
-                  }}
-                />
-              )}
+                {activeTabTN === 'audit' && (
+                  <TiendaNubeAuditView
+                    auditReport={tnAuditReport}
+                    loading={tnLoadingAudit}
+                    onRefresh={() => loadTnAudit(tnAuditTolerance)}
+                    onFixPrice={handleFixTnSinglePrice}
+                    onFixBatch={handleFixTnBatchPrices}
+                    tolerancePct={tnAuditTolerance}
+                    onToleranceChange={(newTol) => {
+                      setTnAuditTolerance(newTol);
+                      loadTnAudit(newTol);
+                    }}
+                  />
+                )}
 
-              {activeTabTN === 'sync' && (
-                <TiendaNubeSyncView
-                  onAddToast={addToast}
-                  onSyncFinished={() => {
-                    loadTnCatalog(false);
-                    loadTnDashboardData();
-                  }}
-                />
-              )}
-            </>
-          )}
+                {activeTabTN === 'sync' && (
+                  <TiendaNubeSyncView
+                    onAddToast={addToast}
+                    onSyncFinished={() => {
+                      loadTnCatalog(false);
+                      loadTnDashboardData();
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </ErrorBoundary>
 
         </main>
       </div>
