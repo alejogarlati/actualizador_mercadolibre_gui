@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  X, 
-  Save, 
   Plus, 
   Trash2, 
   Layers, 
-  Info, 
-  Tag, 
-  DollarSign, 
-  Truck, 
-  Check, 
-  AlertCircle 
+  Save, 
+  X 
 } from 'lucide-react';
+import Modal from '../ui/Modal';
+import Input from '../ui/Input';
+import Select from '../ui/Select';
+import Tabs from '../ui/Tabs';
+import Button from '../ui/Button';
 
 export default function TiendaNubeProductModal({ 
   isOpen, 
@@ -21,7 +20,7 @@ export default function TiendaNubeProductModal({
   categories = [] 
 }) {
   const isEditing = Boolean(productData?.id);
-  const [activeTab, setActiveTab] = useState('general'); // 'general', 'variants'
+  const [activeTab, setActiveTab] = useState('general');
 
   // Form General State
   const [name, setName] = useState('');
@@ -218,197 +217,162 @@ export default function TiendaNubeProductModal({
 
   if (!isOpen) return null;
 
+  const tabs = [
+    { id: 'general', label: 'Datos Generales & Precios' },
+    { id: 'variants', label: 'Matriz de Variantes', count: variants.length }
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col my-8 max-h-[90vh]">
-        {/* Header */}
-        <div className="p-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="p-3 rounded-xl bg-red-50 text-red-600 border border-red-200">
-              <Layers className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">
-                {isEditing ? `Editar Producto #${productData.id}` : 'Crear Nuevo Producto en Tiendanube'}
-              </h2>
-              <p className="text-xs text-slate-500">
-                Configura catálogo, variantes multilingües y stock integrado
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={isEditing ? `Editar Producto #${productData.id}` : 'Crear Nuevo Producto en Tiendanube'}
+      subtitle="Configura catálogo, variantes multilingües y stock integrado"
+      icon={Layers}
+      maxWidth="max-w-3xl"
+      footer={
+        <>
+          <Button variant="ghost" size="md" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            size="md"
+            icon={Save}
+            onClick={handleSubmit}
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
+            {isEditing ? 'Guardar Cambios' : 'Crear Producto'}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-5">
         {/* Tab Selector */}
-        <div className="px-6 pt-3 bg-slate-50/50 border-b border-slate-200 flex gap-6 text-xs font-semibold">
-          <button
-            type="button"
-            onClick={() => setActiveTab('general')}
-            className={`pb-2.5 border-b-2 transition-colors ${
-              activeTab === 'general'
-                ? 'border-red-600 text-red-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Datos Generales & Precios
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('variants')}
-            className={`pb-2.5 border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === 'variants'
-                ? 'border-red-600 text-red-600'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            <span>Matriz de Variantes</span>
-            <span className="px-2 py-0.2 rounded-full bg-slate-200 text-[10px] font-mono font-bold text-slate-700">
-              {variants.length}
-            </span>
-          </button>
-        </div>
+        <Tabs
+          tabs={tabs}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          variant="underline"
+        />
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 text-xs">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-xs">
           {activeTab === 'general' ? (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               {/* Nombre */}
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">
-                  Nombre del Producto <span className="text-red-600">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Cemento Portland Holcim 50kg"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-50 text-slate-900 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none font-medium"
-                />
-              </div>
+              <Input
+                label="Nombre del Producto"
+                required
+                placeholder="Ej: Cemento Portland Holcim 50kg"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
 
               {/* Marca & Categoría */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Marca</label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Holcim, Barbieri, Weber"
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    className="w-full bg-slate-50 text-slate-900 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none"
-                  />
-                </div>
+                <Input
+                  label="Marca"
+                  placeholder="Ej: Holcim, Barbieri, Weber"
+                  value={brand}
+                  onChange={(e) => setBrand(e.target.value)}
+                />
 
-                <div>
-                  <label className="block text-slate-700 font-bold mb-1">Categoría</label>
-                  <select
-                    value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full bg-slate-50 text-slate-800 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none"
-                  >
-                    <option value="">Sin categoría principal</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
+                <Select
+                  label="Categoría Principal"
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  options={[
+                    { value: '', label: 'Sin categoría principal' },
+                    ...categories.map(c => ({ value: c.id, label: c.name }))
+                  ]}
+                />
               </div>
 
               {/* Descripción */}
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Descripción / Ficha Técnica</label>
+              <div className="flex flex-col gap-1 w-full text-left">
+                <label className="text-xs font-bold text-[#141413] tracking-tight">
+                  Descripción / Ficha Técnica
+                </label>
                 <textarea
                   rows="3"
                   placeholder="Descripción del producto o características..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-slate-50 text-slate-900 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none"
+                  className="w-full bg-[#faf9f5] focus:bg-white text-xs text-[#141413] p-3 rounded-xl border border-[#e5e3dc] focus:border-[#141413] focus:ring-1 focus:ring-[#141413] focus:outline-none font-medium"
                 />
               </div>
 
               {/* Tags */}
-              <div>
-                <label className="block text-slate-700 font-bold mb-1">Etiquetas (Separadas por comas)</label>
-                <input
-                  type="text"
-                  placeholder="construccion, cemento, albañileria"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  className="w-full bg-slate-50 text-slate-900 px-4 py-2.5 rounded-xl border border-slate-200 focus:border-red-500 focus:bg-white focus:outline-none"
-                />
-              </div>
+              <Input
+                label="Etiquetas (Separadas por comas)"
+                placeholder="construccion, cemento, albañileria"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+              />
 
               {/* Switches */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100/60 transition-colors">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                <label className="flex items-center gap-3 p-3.5 bg-[#faf9f5] rounded-xl border border-[#e5e3dc] cursor-pointer hover:bg-[#f4f2eb] transition-colors">
                   <input
                     type="checkbox"
                     checked={freeShipping}
                     onChange={(e) => setFreeShipping(e.target.checked)}
-                    className="w-4 h-4 rounded text-red-600 focus:ring-0 bg-white border-slate-300"
+                    className="w-4 h-4 rounded text-[#141413] focus:ring-0"
                   />
                   <div>
-                    <span className="font-bold text-slate-900 block">Envío Gratis</span>
-                    <span className="text-[11px] text-slate-500">Marcar este producto con flete bonificado</span>
+                    <span className="font-bold text-[#141413] block">Envío Gratis</span>
+                    <span className="text-[10.5px] text-[#73726c]">Flete bonificado</span>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100/60 transition-colors">
+                <label className="flex items-center gap-3 p-3.5 bg-[#faf9f5] rounded-xl border border-[#e5e3dc] cursor-pointer hover:bg-[#f4f2eb] transition-colors">
                   <input
                     type="checkbox"
                     checked={published}
                     onChange={(e) => setPublished(e.target.checked)}
-                    className="w-4 h-4 rounded text-red-600 focus:ring-0 bg-white border-slate-300"
+                    className="w-4 h-4 rounded text-[#141413] focus:ring-0"
                   />
                   <div>
-                    <span className="font-bold text-slate-900 block">Publicado / Activo</span>
-                    <span className="text-[11px] text-slate-500">Visible inmediatamente en la tienda online</span>
+                    <span className="font-bold text-[#141413] block">Publicado / Activo</span>
+                    <span className="text-[10.5px] text-[#73726c]">Visible en la tienda online</span>
                   </div>
                 </label>
               </div>
             </div>
           ) : (
-            <div className="space-y-5">
-              {/* Atributos del Producto */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+            <div className="flex flex-col gap-5">
+              {/* Atributos */}
+              <div className="p-4 bg-[#faf9f5] rounded-2xl border border-[#e5e3dc] flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-bold text-slate-900">Atributos del Producto</h4>
-                    <p className="text-[11px] text-slate-500">Tiendanube permite un máximo de 3 atributos (ej. Color, Medida, Espesor).</p>
+                    <h4 className="font-bold text-[#141413]">Atributos del Producto</h4>
+                    <p className="text-[10.5px] text-[#73726c]">Máximo 3 atributos (ej. Color, Medida, Espesor).</p>
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={addAttribute}
                     disabled={attributes.length >= 3}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white hover:bg-slate-100 text-red-600 border border-slate-200 shadow-xs disabled:opacity-40"
+                    icon={Plus}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar Atributo ({attributes.length}/3)</span>
-                  </button>
+                    Agregar ({attributes.length}/3)
+                  </Button>
                 </div>
 
                 {attributes.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
                     {attributes.map((attr, aIdx) => (
-                      <div key={aIdx} className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-slate-200 shadow-xs">
+                      <div key={aIdx} className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-[#e5e3dc] shadow-xs">
                         <input
                           type="text"
                           value={attr}
                           onChange={(e) => updateAttributeName(aIdx, e.target.value)}
                           placeholder={`Atributo #${aIdx+1}`}
-                          className="bg-transparent text-slate-900 font-bold text-xs focus:outline-none w-full"
+                          className="bg-transparent text-[#141413] font-bold text-xs focus:outline-none w-full"
                         />
                         <button
                           type="button"
                           onClick={() => removeAttribute(aIdx)}
-                          className="text-slate-400 hover:text-red-600 p-1"
+                          className="text-[#73726c] hover:text-[#b91c1c] p-0.5 cursor-pointer"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -419,29 +383,29 @@ export default function TiendaNubeProductModal({
               </div>
 
               {/* Matriz de Variantes */}
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-slate-900">Variantes ({variants.length})</h4>
-                  <button
-                    type="button"
+                  <h4 className="font-bold text-[#141413]">Variantes ({variants.length})</h4>
+                  <Button
+                    variant="primary"
+                    size="sm"
                     onClick={addVariant}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200"
+                    icon={Plus}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar Variante</span>
-                  </button>
+                    Agregar Variante
+                  </Button>
                 </div>
 
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3">
                   {variants.map((v, vIdx) => (
-                    <div key={vIdx} className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-200">
-                        <span className="font-bold text-slate-900">Variante #{vIdx + 1}</span>
+                    <div key={vIdx} className="p-4 bg-[#faf9f5] rounded-2xl border border-[#e5e3dc] flex flex-col gap-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-[#ece9df]">
+                        <span className="font-bold text-[#141413]">Variante #{vIdx + 1}</span>
                         {variants.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeVariant(vIdx)}
-                            className="text-slate-400 hover:text-red-600 p-1 rounded"
+                            className="text-[#73726c] hover:text-[#b91c1c] p-1 rounded cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -451,78 +415,59 @@ export default function TiendaNubeProductModal({
                       {attributes.length > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           {attributes.map((attr, aIdx) => (
-                            <div key={aIdx}>
-                              <label className="block text-[11px] text-red-600 font-bold mb-1">{attr}</label>
-                              <input
-                                type="text"
-                                placeholder={`Ej: ${attr === 'Color' ? 'Rojo' : '50kg'}`}
-                                value={v.values?.[aIdx] || ''}
-                                onChange={(e) => updateVariantValue(vIdx, aIdx, e.target.value)}
-                                className="w-full bg-white text-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none font-medium"
-                              />
-                            </div>
+                            <Input
+                              key={aIdx}
+                              label={attr}
+                              placeholder={`Ej: ${attr === 'Color' ? 'Rojo' : '50kg'}`}
+                              value={v.values?.[aIdx] || ''}
+                              onChange={(e) => updateVariantValue(vIdx, aIdx, e.target.value)}
+                            />
                           ))}
                         </div>
                       )}
 
                       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                        <div>
-                          <label className="block text-[11px] text-slate-600 font-medium mb-1">Precio Lista ($) *</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            required
-                            value={v.price}
-                            onChange={(e) => updateVariantField(vIdx, 'price', e.target.value)}
-                            className="w-full bg-white text-slate-900 font-mono font-bold px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
-                          />
-                        </div>
+                        <Input
+                          label="Precio Lista ($) *"
+                          type="number"
+                          step="0.01"
+                          required
+                          value={v.price}
+                          onChange={(e) => updateVariantField(vIdx, 'price', e.target.value)}
+                        />
 
-                        <div>
-                          <label className="block text-[11px] text-slate-600 font-medium mb-1">Precio Oferta ($)</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            placeholder="Opcional"
-                            value={v.promotional_price}
-                            onChange={(e) => updateVariantField(vIdx, 'promotional_price', e.target.value)}
-                            className="w-full bg-white text-emerald-600 font-mono font-bold px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
-                          />
-                        </div>
+                        <Input
+                          label="Precio Oferta ($)"
+                          type="number"
+                          step="0.01"
+                          placeholder="Opcional"
+                          value={v.promotional_price}
+                          onChange={(e) => updateVariantField(vIdx, 'promotional_price', e.target.value)}
+                        />
 
-                        <div>
-                          <label className="block text-[11px] text-slate-600 font-medium mb-1">Costo ERP ($)</label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            placeholder="Opcional"
-                            value={v.cost}
-                            onChange={(e) => updateVariantField(vIdx, 'cost', e.target.value)}
-                            className="w-full bg-white text-slate-600 font-mono font-medium px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
-                          />
-                        </div>
+                        <Input
+                          label="Costo ERP ($)"
+                          type="number"
+                          step="0.01"
+                          placeholder="Opcional"
+                          value={v.cost}
+                          onChange={(e) => updateVariantField(vIdx, 'cost', e.target.value)}
+                        />
 
-                        <div>
-                          <label className="block text-[11px] text-slate-600 font-medium mb-1">Stock (Unidades)</label>
-                          <input
-                            type="number"
-                            placeholder="Infinito"
-                            value={v.stock}
-                            onChange={(e) => updateVariantField(vIdx, 'stock', e.target.value)}
-                            className="w-full bg-white text-slate-900 font-mono font-bold px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
-                          />
-                        </div>
+                        <Input
+                          label="Stock"
+                          type="number"
+                          placeholder="Infinito"
+                          value={v.stock}
+                          onChange={(e) => updateVariantField(vIdx, 'stock', e.target.value)}
+                        />
 
-                        <div>
-                          <label className="block text-[11px] text-slate-600 font-medium mb-1">SKU</label>
-                          <input
-                            type="text"
-                            placeholder="Ej: CEM-HOL-50"
-                            value={v.sku}
-                            onChange={(e) => updateVariantField(vIdx, 'sku', e.target.value)}
-                            className="w-full bg-white text-slate-800 font-mono px-3.5 py-2 rounded-xl border border-slate-200 focus:border-red-500 focus:outline-none"
-                          />
-                        </div>
+                        <Input
+                          label="SKU"
+                          placeholder="Ej: CEM-50"
+                          value={v.sku}
+                          onChange={(e) => updateVariantField(vIdx, 'sku', e.target.value)}
+                        />
                       </div>
                     </div>
                   ))}
@@ -530,27 +475,8 @@ export default function TiendaNubeProductModal({
               </div>
             </div>
           )}
-
-          {/* Footer Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
-            >
-              Cancelar
-            </button>
-
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 text-white shadow-md shadow-red-200"
-            >
-              <Save className="w-4 h-4" />
-              <span>{isEditing ? 'Guardar Cambios' : 'Crear Producto'}</span>
-            </button>
-          </div>
         </form>
       </div>
-    </div>
+    </Modal>
   );
 }
