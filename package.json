@@ -5,6 +5,7 @@
   "description": "Actualizador Multicanal de Precios y Stock (Mercado Libre & Tiendanube) - Corralón Aconquija",
   "author": "Corralón Aconquija",
   "main": "electron/main.js",
+  "type": "module",
   "scripts": {
     "start": "npm run electron:dev",
     "dev": "vite",
@@ -29,11 +30,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
