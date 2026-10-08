@@ -34,8 +34,26 @@ export const uploadCSV = async (file) => {
   return res.data;
 };
 
-export const executeSync = async (margenPct = 0.0) => {
-  const res = await axios.post(`${API_BASE_URL}/sync/execute`, { margen_adicional_pct: margenPct });
+export const fetchCSVPreview = async () => {
+  try {
+    const res = await axios.get(`${API_BASE_URL}/sync/preview-csv`);
+    return res.data;
+  } catch (err) {
+    return null;
+  }
+};
+
+export const downloadCSVTemplate = () => {
+  window.open(`${API_BASE_URL}/sync/template`, '_blank');
+};
+
+export const executeSync = async (margenPct = 0.0, syncPrices = true, syncStock = true, syncDimensions = true) => {
+  const res = await axios.post(`${API_BASE_URL}/sync/execute`, {
+    margen_adicional_pct: margenPct,
+    sync_prices: syncPrices,
+    sync_stock: syncStock,
+    sync_dimensions: syncDimensions
+  });
   return res.data;
 };
 

@@ -399,10 +399,10 @@ export default function App() {
     }
   };
 
-  const handleRunMeliSync = async (margen = 0.0) => {
+  const handleRunMeliSync = async (margen = 0.0, syncPrices = true, syncStock = true, syncDimensions = true) => {
     try {
-      await executeSync(margen);
-      addToast('info', 'Sincronización Iniciada', 'Actualizando precios en Mercado Libre en segundo plano...');
+      await executeSync(margen, syncPrices, syncStock, syncDimensions);
+      addToast('info', 'Sincronización Iniciada', 'Actualizando datos en Mercado Libre en segundo plano...');
     } catch (err) {
       addToast('error', 'Fallo al Iniciar Sincronización', err.message);
     }
@@ -413,6 +413,24 @@ export default function App() {
     try {
       if (tnEditingProduct?.id) {
         await updateTiendanubeProduct(tnEditingProduct.id, productPayload);
+        if (productPayload.variants && Array.isArray(productPayload.variants)) {
+          for (const v of productPayload.variants) {
+            if (v.id) {
+              await updateTiendanubeVariant(tnEditingProduct.id, v.id, {
+                price: v.price,
+                promotional_price: v.promotional_price,
+                cost: v.cost,
+                stock: v.stock,
+                sku: v.sku,
+                barcode: v.barcode,
+                weight: v.weight,
+                height: v.height,
+                width: v.width,
+                depth: v.depth
+              });
+            }
+          }
+        }
         addToast('success', 'Producto Actualizado', 'Los cambios se reflejaron en Tiendanube.');
       } else {
         await createTiendanubeProduct(productPayload);

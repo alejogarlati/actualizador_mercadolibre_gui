@@ -28,6 +28,26 @@ import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 
+const formatDimensions = (v) => {
+  const h = Number(v?.height);
+  const w = Number(v?.width);
+  const d = Number(v?.depth);
+  const weight = Number(v?.weight);
+
+  const hasDims = h > 0 && w > 0 && d > 0;
+  const hasWeight = weight > 0;
+
+  if (!hasDims && !hasWeight) return null;
+
+  let dimStr = hasDims ? `${h}×${w}×${d} cm` : '';
+  let weightStr = hasWeight ? `${weight} kg` : '';
+
+  if (dimStr && weightStr) return `${dimStr} • ${weightStr}`;
+  return dimStr || weightStr;
+};
+
+const isFullyMeasured = (v) => Number(v?.height) > 0 && Number(v?.width) > 0 && Number(v?.depth) > 0 && Number(v?.weight) > 0;
+
 const SORT_ACCESSORS = {
   product_name: (item) => String(item.product_name || item.display_title || ''),
   sku: (item) => String(item.sku || ''),
@@ -36,7 +56,8 @@ const SORT_ACCESSORS = {
   applied_discount_pct: (item) => (item.applied_discount_pct !== undefined && item.applied_discount_pct !== null ? Number(item.applied_discount_pct) : 0),
   price: (item) => Number(item.price) || 0,
   stock: (item) => (item.stock !== null && item.stock !== undefined ? Number(item.stock) : 999999),
-  status: (item) => String(item.status || '')
+  status: (item) => String(item.status || ''),
+  dimensions: (item) => formatDimensions(item) || ''
 };
 
 export default function TiendaNubeCatalog({ 
@@ -58,6 +79,7 @@ export default function TiendaNubeCatalog({
   const [discountFilter, setDiscountFilter] = useState('all');
   const [stockFilter, setStockFilter] = useState('all');
   const [costFilter, setCostFilter] = useState('all');
+  const [dimensionsFilter, setDimensionsFilter] = useState('all');
   const [sortBy, setSortBy] = useState('product_name');
   const [sortOrder, setSortOrder] = useState('asc');
 
@@ -134,9 +156,21 @@ export default function TiendaNubeCatalog({
         matchCost = costNum <= 0;
       }
 
-      return matchSearch && matchStatus && matchCategory && matchDiscount && matchStock && matchCost;
+      let matchDimensions = true;
+      const fullyMeasured = isFullyMeasured(v);
+      if (dimensionsFilter === 'with_dimensions') {
+        matchDimensions = fullyMeasured;
+      } else if (dimensionsFilter === 'missing_dimensions') {
+        matchDimensions = !fullyMeasured;
+      }
+
+      return matchSearch && matchStatus && matchCategory && matchDiscount && matchStock && matchCost && matchDimensions;
     });
-  }, [rawVariants, searchTerm, statusFilter, categoryFilter, discountFilter, stockFilter, costFilter]);
+  }, [rawVariants, searchTerm, statusFilter, categoryFilter, discountFilter, stockFilter, costFilter, dimensionsFilter]);
+
+  const missingDimensionsCount = useMemo(() => {
+    return rawVariants.filter(v => !isFullyMeasured(v)).length;
+  }, [rawVariants]);
 
   // 2. Ordenamiento multicriterio
   const sortedVariants = useMemo(() => {
@@ -288,6 +322,7 @@ export default function TiendaNubeCatalog({
     { key: 'applied_discount_pct', label: 'Descuento', width: 130, minWidth: 95, align: 'center', sortable: true },
     { key: 'price', label: 'Precio Tienda', width: 130, minWidth: 95, align: 'right', sortable: true },
     { key: 'stock', label: 'Stock', width: 95, minWidth: 70, align: 'center', sortable: true },
+    { key: 'dimensions', label: 'Medidas / Peso', width: 175, minWidth: 120, align: 'center', sortable: true },
     { key: 'status', label: 'Estado', width: 95, minWidth: 75, align: 'center', sortable: true },
     { key: 'actions', label: 'Acciones', width: 85, minWidth: 60, align: 'right' }
   ];
@@ -305,14 +340,34 @@ export default function TiendaNubeCatalog({
         refreshing={loading}
         refreshTitle="Refrescar Catálogo"
         actions={
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onOpenCreate}
-            icon={Plus}
-          >
-            Nuevo Producto
-          </Button>
+          <div className="flex items-center gap-2">
+            {missingDimensionsCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDimensionsFilter(prev => prev === 'missing_dimensions' ? 'all' : 'missing_dimensions');
+                  setCurrentPage(1);
+                }}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                  dimensionsFilter === 'missing_dimensions'
+                    ? 'bg-[#b45309] text-white border-[#b45309] shadow-xs'
+                    : 'bg-[#fffbeb] text-[#78350f] border-[#fde68a] dark:bg-[#78350f]/25 dark:text-[#fde047] dark:border-[#b45309]/50 hover:bg-[#fef3c7]'
+                }`}
+                title="Filtrar variantes que no tienen cubicaje completo cargado"
+              >
+                <span>⚠️ {missingDimensionsCount} sin medidas</span>
+              </button>
+            )}
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onOpenCreate}
+              icon={Plus}
+            >
+              Nuevo Producto
+            </Button>
+          </div>
         }
         filters={
           <>
@@ -365,6 +420,22 @@ export default function TiendaNubeCatalog({
                 <option value="all">Stock: Todos</option>
                 <option value="in_stock">Con Stock</option>
                 <option value="out_of_stock">Sin Stock (Agotados)</option>
+              </select>
+            </div>
+
+            {/* Filtro Medidas */}
+            <div className="flex items-center gap-1.5 bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] rounded-xl px-2.5 py-1.5 text-xs">
+              <select
+                value={dimensionsFilter}
+                onChange={(e) => {
+                  setDimensionsFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs font-bold text-[#141413] dark:text-[#faf9f5] outline-none cursor-pointer"
+              >
+                <option value="all">Medidas: Todas</option>
+                <option value="with_dimensions">Con cubicaje completo</option>
+                <option value="missing_dimensions">Sin cubicaje</option>
               </select>
             </div>
           </>
@@ -517,6 +588,23 @@ export default function TiendaNubeCatalog({
                 }`}>
                   {v.stock !== null && v.stock !== undefined ? v.stock : '∞'}
                 </span>
+              </td>
+
+              {/* Medidas / Peso */}
+              <td className="py-2.5 px-3.5 text-center">
+                {isFullyMeasured(v) ? (
+                  <span className="font-mono text-[11px] font-medium text-[#141413] dark:text-[#faf9f5] bg-[#faf9f5] dark:bg-[#262624] px-2 py-0.5 rounded border border-[#e5e3dc] dark:border-[#363633] whitespace-nowrap">
+                    {formatDimensions(v)}
+                  </span>
+                ) : formatDimensions(v) ? (
+                  <span className="font-mono text-[11px] text-[#b45309] dark:text-[#facc15] bg-[#fffbeb] dark:bg-[#78350f]/25 px-2 py-0.5 rounded border border-[#fde68a] dark:border-[#b45309]/50 whitespace-nowrap" title="Medidas parciales">
+                    {formatDimensions(v)}
+                  </span>
+                ) : (
+                  <Badge variant="warning" size="sm">
+                    ⚠️ Sin cubicaje
+                  </Badge>
+                )}
               </td>
 
               {/* Estado */}

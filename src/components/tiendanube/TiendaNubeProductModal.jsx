@@ -4,7 +4,8 @@ import {
   Trash2, 
   Layers, 
   Save, 
-  X 
+  X,
+  Package
 } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
@@ -43,6 +44,10 @@ export default function TiendaNubeProductModal({
       stock: '',
       sku: '',
       barcode: '',
+      weight: '',
+      height: '',
+      width: '',
+      depth: '',
       values: []
     }
   ]);
@@ -72,6 +77,10 @@ export default function TiendaNubeProductModal({
           stock: v.stock !== null && v.stock !== undefined ? v.stock : '',
           sku: v.sku || '',
           barcode: v.barcode || '',
+          weight: v.weight !== null && v.weight !== undefined ? String(v.weight) : '',
+          height: v.height !== null && v.height !== undefined ? String(v.height) : '',
+          width: v.width !== null && v.width !== undefined ? String(v.width) : '',
+          depth: v.depth !== null && v.depth !== undefined ? String(v.depth) : '',
           values: (v.values || []).map(val => val.es || Object.values(val)[0])
         })));
       } else {
@@ -83,6 +92,10 @@ export default function TiendaNubeProductModal({
             stock: productData.stock || '',
             sku: productData.sku || '',
             barcode: '',
+            weight: productData.weight !== null && productData.weight !== undefined ? String(productData.weight) : '',
+            height: productData.height !== null && productData.height !== undefined ? String(productData.height) : '',
+            width: productData.width !== null && productData.width !== undefined ? String(productData.width) : '',
+            depth: productData.depth !== null && productData.depth !== undefined ? String(productData.depth) : '',
             values: []
           }
         ]);
@@ -104,6 +117,10 @@ export default function TiendaNubeProductModal({
           stock: '',
           sku: '',
           barcode: '',
+          weight: '',
+          height: '',
+          width: '',
+          depth: '',
           values: []
         }
       ]);
@@ -148,6 +165,10 @@ export default function TiendaNubeProductModal({
         stock: '',
         sku: '',
         barcode: '',
+        weight: baseVariant.weight || '',
+        height: baseVariant.height || '',
+        width: baseVariant.width || '',
+        depth: baseVariant.depth || '',
         values: attributes.map(() => '')
       }
     ]);
@@ -191,6 +212,18 @@ export default function TiendaNubeProductModal({
       if (v.cost) payload.cost = parseFloat(v.cost);
       if (v.stock !== '' && v.stock !== null && v.stock !== undefined) {
         payload.stock = parseInt(v.stock);
+      }
+      if (v.weight !== '' && v.weight !== null && v.weight !== undefined && !isNaN(parseFloat(v.weight))) {
+        payload.weight = parseFloat(v.weight);
+      }
+      if (v.height !== '' && v.height !== null && v.height !== undefined && !isNaN(parseFloat(v.height))) {
+        payload.height = parseFloat(v.height);
+      }
+      if (v.width !== '' && v.width !== null && v.width !== undefined && !isNaN(parseFloat(v.width))) {
+        payload.width = parseFloat(v.width);
+      }
+      if (v.depth !== '' && v.depth !== null && v.depth !== undefined && !isNaN(parseFloat(v.depth))) {
+        payload.depth = parseFloat(v.depth);
       }
 
       if (attributes.length > 0) {
@@ -468,6 +501,67 @@ export default function TiendaNubeProductModal({
                           value={v.sku}
                           onChange={(e) => updateVariantField(vIdx, 'sku', e.target.value)}
                         />
+                      </div>
+
+                      {/* Medidas y Peso de Envío */}
+                      <div className="pt-2 border-t border-[#ece9df] dark:border-[#2d2d2a] flex flex-col gap-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-[#73726c] dark:text-[#a3a199] flex items-center gap-1.5">
+                            <Package className="w-3.5 h-3.5 text-[#d97706] dark:text-[#f59e0b]" />
+                            Medidas & Peso de Envío
+                          </span>
+                          {(() => {
+                            const vH = parseFloat(v.height) || 0;
+                            const vW = parseFloat(v.width) || 0;
+                            const vD = parseFloat(v.depth) || 0;
+                            const volCm3 = (vH > 0 && vW > 0 && vD > 0) ? Math.round(vH * vW * vD) : 0;
+                            if (volCm3 <= 0) return null;
+                            const volM3 = (volCm3 / 1000000).toFixed(4);
+                            return (
+                              <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-[#e5e3dc]/50 dark:bg-[#363633]/50 text-[#73726c] dark:text-[#a3a199]">
+                                {volCm3.toLocaleString()} cm³ ({volM3} m³)
+                              </span>
+                            );
+                          })()}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                          <Input
+                            label="Peso (kg)"
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            placeholder="0.000"
+                            value={v.weight || ''}
+                            onChange={(e) => updateVariantField(vIdx, 'weight', e.target.value)}
+                          />
+                          <Input
+                            label="Alto (cm)"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            placeholder="0.0"
+                            value={v.height || ''}
+                            onChange={(e) => updateVariantField(vIdx, 'height', e.target.value)}
+                          />
+                          <Input
+                            label="Ancho (cm)"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            placeholder="0.0"
+                            value={v.width || ''}
+                            onChange={(e) => updateVariantField(vIdx, 'width', e.target.value)}
+                          />
+                          <Input
+                            label="Profundidad (cm)"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            placeholder="0.0"
+                            value={v.depth || ''}
+                            onChange={(e) => updateVariantField(vIdx, 'depth', e.target.value)}
+                          />
+                        </div>
                       </div>
                     </div>
                   ))}

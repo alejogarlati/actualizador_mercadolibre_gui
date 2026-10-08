@@ -18,6 +18,27 @@ import Pagination from '../ui/Pagination';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
 
+const formatDimensions = (dimensionsStr) => {
+  if (!dimensionsStr || typeof dimensionsStr !== 'string') return null;
+  const [dimsPart, weightPart] = dimensionsStr.split(',');
+  if (!dimsPart) return null;
+  const parts = dimsPart.split('x').map(p => parseFloat(p));
+  if (parts.length < 3 || parts.some(isNaN) || parts.some(p => p <= 0)) return null;
+  const [h, w, l] = parts;
+  let weightText = '';
+  if (weightPart) {
+    const g = parseFloat(weightPart);
+    if (!isNaN(g) && g > 0) {
+      if (g >= 1000) {
+        weightText = ` • ${(g / 1000).toFixed(g % 1000 === 0 ? 0 : 2)} kg`;
+      } else {
+        weightText = ` • ${g} g`;
+      }
+    }
+  }
+  return `${h}×${w}×${l} cm${weightText}`;
+};
+
 const SORT_ACCESSORS = {
   id: (item) => item.id || '',
   sku: (item) => item.sku || '',
@@ -29,7 +50,8 @@ const SORT_ACCESSORS = {
   margen: (item) => {
     const mostrador = item.precio_mostrador || Math.round(item.price * 0.70);
     return mostrador > 0 ? ((item.price - mostrador) / mostrador) * 100 : 0;
-  }
+  },
+  dimensions: (item) => formatDimensions(item.dimensions) || ''
 };
 
 export default function MeliCatalog({
@@ -43,6 +65,7 @@ export default function MeliCatalog({
   const [statusFilter, setStatusFilter] = useState('all');
   const [shippingFilter, setShippingFilter] = useState('all');
   const [skuFilter, setSkuFilter] = useState('all');
+  const [dimensionsFilter, setDimensionsFilter] = useState('all');
   const [sortBy, setSortBy] = useState('title');
   const [sortOrder, setSortOrder] = useState('asc');
   const [expandedItems, setExpandedItems] = useState({});
@@ -87,9 +110,21 @@ export default function MeliCatalog({
         matchSku = !item.sku;
       }
 
-      return matchSearch && matchStatus && matchShipping && matchSku;
+      let matchDimensions = true;
+      const formattedDims = formatDimensions(item.dimensions);
+      if (dimensionsFilter === 'with_dimensions') {
+        matchDimensions = Boolean(formattedDims);
+      } else if (dimensionsFilter === 'missing_dimensions') {
+        matchDimensions = !formattedDims;
+      }
+
+      return matchSearch && matchStatus && matchShipping && matchSku && matchDimensions;
     });
-  }, [items, searchTerm, statusFilter, shippingFilter, skuFilter]);
+  }, [items, searchTerm, statusFilter, shippingFilter, skuFilter, dimensionsFilter]);
+
+  const missingDimensionsCount = useMemo(() => {
+    return items.filter(i => !formatDimensions(i.dimensions)).length;
+  }, [items]);
 
   // 2. Ordenamiento
   const sortedItems = useMemo(() => {
@@ -127,11 +162,12 @@ export default function MeliCatalog({
   const columns = [
     { key: 'id', label: 'ID / Publicación', width: 175, minWidth: 120, sortable: true },
     { key: 'sku', label: 'SKU ERP', width: 140, minWidth: 90, sortable: true },
-    { key: 'title', label: 'Título & Categoría', width: 340, minWidth: 180, sortable: true },
-    { key: 'status', label: 'Estado', width: 100, minWidth: 75, align: 'center', sortable: true },
-    { key: 'precio_mostrador', label: 'Costo ERP', width: 120, minWidth: 90, align: 'right', sortable: true },
-    { key: 'price', label: 'Precio MeLi', width: 130, minWidth: 95, align: 'right', sortable: true },
-    { key: 'margen', label: 'Margen (%)', width: 105, minWidth: 80, align: 'center', sortable: true },
+    { key: 'title', label: 'Título & Categoría', width: 320, minWidth: 180, sortable: true },
+    { key: 'status', label: 'Estado', width: 95, minWidth: 75, align: 'center', sortable: true },
+    { key: 'precio_mostrador', label: 'Costo ERP', width: 115, minWidth: 85, align: 'right', sortable: true },
+    { key: 'price', label: 'Precio MeLi', width: 120, minWidth: 90, align: 'right', sortable: true },
+    { key: 'margen', label: 'Margen (%)', width: 100, minWidth: 75, align: 'center', sortable: true },
+    { key: 'dimensions', label: 'Medidas / Peso', width: 175, minWidth: 125, align: 'center', sortable: true },
     { key: 'actions', label: 'Acciones', width: 85, minWidth: 60, align: 'right' }
   ];
 
@@ -194,15 +230,50 @@ export default function MeliCatalog({
                 <option value="no_sku">Sin SKU (N/A)</option>
               </select>
             </div>
+
+            <div className="flex items-center gap-1.5 bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] rounded-xl px-2.5 py-1.5 text-xs">
+              <select
+                value={dimensionsFilter}
+                onChange={(e) => {
+                  setDimensionsFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="bg-transparent text-xs font-bold text-[#141413] dark:text-[#faf9f5] outline-none cursor-pointer"
+              >
+                <option value="all">Medidas: Todas</option>
+                <option value="with_dimensions">Con cubicaje completo</option>
+                <option value="missing_dimensions">Sin cubicaje</option>
+              </select>
+            </div>
           </>
         }
         actions={
-          lastUpdated && (
-            <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-[#73726c] dark:text-[#a3a199] bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] px-2.5 py-1.5 rounded-xl font-mono">
-              <Clock className="w-3.5 h-3.5 text-[#9c998f] dark:text-[#73726c]" />
-              <span>Sinc: {lastUpdated}</span>
-            </div>
-          )
+          <div className="flex items-center gap-2">
+            {missingDimensionsCount > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setDimensionsFilter(prev => prev === 'missing_dimensions' ? 'all' : 'missing_dimensions');
+                  setCurrentPage(1);
+                }}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                  dimensionsFilter === 'missing_dimensions'
+                    ? 'bg-[#b45309] text-white border-[#b45309] shadow-xs'
+                    : 'bg-[#fffbeb] text-[#78350f] border-[#fde68a] dark:bg-[#78350f]/25 dark:text-[#fde047] dark:border-[#b45309]/50 hover:bg-[#fef3c7]'
+                }`}
+                title="Filtrar publicaciones que no tienen medidas ni peso"
+              >
+                <span>⚠️ {missingDimensionsCount} sin medidas</span>
+              </button>
+            )}
+
+            {lastUpdated && (
+              <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-[#73726c] dark:text-[#a3a199] bg-[#faf9f5] dark:bg-[#262624] border border-[#e5e3dc] dark:border-[#363633] px-2.5 py-1.5 rounded-xl font-mono">
+                <Clock className="w-3.5 h-3.5 text-[#9c998f] dark:text-[#73726c]" />
+                <span>Sinc: {lastUpdated}</span>
+              </div>
+            )}
+          </div>
         }
       />
 
@@ -299,6 +370,19 @@ export default function MeliCatalog({
                   <Badge variant="neutral" size="sm">
                     +{incrementoPct}%
                   </Badge>
+                </td>
+
+                {/* Medidas / Peso */}
+                <td className="py-2.5 px-3.5 text-center">
+                  {formatDimensions(item.dimensions) ? (
+                    <span className="font-mono text-[11px] font-medium text-[#141413] dark:text-[#faf9f5] bg-[#faf9f5] dark:bg-[#262624] px-2 py-0.5 rounded border border-[#e5e3dc] dark:border-[#363633] whitespace-nowrap">
+                      {formatDimensions(item.dimensions)}
+                    </span>
+                  ) : (
+                    <Badge variant="warning" size="sm">
+                      ⚠️ Sin cubicaje
+                    </Badge>
+                  )}
                 </td>
 
                 {/* Actions */}

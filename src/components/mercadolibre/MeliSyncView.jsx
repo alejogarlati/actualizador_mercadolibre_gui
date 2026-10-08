@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   UploadCloud, 
   Play, 
@@ -12,7 +12,8 @@ import {
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
-import { uploadCSV } from '../../services/api';
+import CSVDiagnosticCard from '../common/CSVDiagnosticCard';
+import { uploadCSV, fetchCSVPreview } from '../../services/api';
 
 export default function MeliSyncView({ 
   onRunSync, 
@@ -20,9 +21,30 @@ export default function MeliSyncView({
   onAddToast 
 }) {
   const [margenAdicional, setMargenAdicional] = useState(0.0);
+  const [syncPrices, setSyncPrices] = useState(true);
+  const [syncStock, setSyncStock] = useState(true);
+  const [syncDimensions, setSyncDimensions] = useState(true);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
+  const [csvPreview, setCsvPreview] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
+  const loadPreview = async () => {
+    setLoadingPreview(true);
+    try {
+      const prev = await fetchCSVPreview();
+      if (prev) setCsvPreview(prev);
+    } catch {
+      // silent
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPreview();
+  }, []);
 
   const handleFileUpload = async (e) => {
     const selectedFile = e.target.files[0];
@@ -30,8 +52,13 @@ export default function MeliSyncView({
     setFile(selectedFile);
     setUploading(true);
     try {
-      await uploadCSV(selectedFile);
+      const res = await uploadCSV(selectedFile);
       setSyncStatus(`Archivo '${selectedFile.name}' cargado correctamente.`);
+      if (res?.preview) {
+        setCsvPreview(res.preview);
+      } else {
+        await loadPreview();
+      }
       if (onAddToast) {
         onAddToast('success', 'Archivo CSV Cargado', `Planilla '${selectedFile.name}' lista para procesar.`);
       }
@@ -47,7 +74,7 @@ export default function MeliSyncView({
 
   const handleStartSync = () => {
     if (onRunSync) {
-      onRunSync(parseFloat(margenAdicional) || 0.0);
+      onRunSync(parseFloat(margenAdicional) || 0.0, syncPrices, syncStock, syncDimensions);
     }
   };
 
@@ -56,7 +83,7 @@ export default function MeliSyncView({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* Columna Izquierda: Carga de Archivo & Parámetros */}
+      {/* Columna Izquierda: Carga de Archivo, Diagnóstico & Parámetros */}
       <div className="lg:col-span-5 flex flex-col gap-5">
         <Card
           title="Cargar Planilla de Precios (CSV)"
@@ -121,6 +148,51 @@ export default function MeliSyncView({
               </div>
             </div>
 
+            {/* Switches de Operación Independientes */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <label className="flex items-center gap-2 p-2.5 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#2d2d2a] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={syncPrices}
+                  onChange={(e) => setSyncPrices(e.target.checked)}
+                  disabled={isRunning}
+                  className="w-3.5 h-3.5 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
+                />
+                <div className="leading-tight">
+                  <span className="font-bold text-[#141413] dark:text-[#faf9f5] block text-[11px]">Precios</span>
+                  <span className="text-[9.5px] text-[#73726c] dark:text-[#a3a199]">Cálculo financiero</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-2.5 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#2d2d2a] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={syncStock}
+                  onChange={(e) => setSyncStock(e.target.checked)}
+                  disabled={isRunning}
+                  className="w-3.5 h-3.5 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
+                />
+                <div className="leading-tight">
+                  <span className="font-bold text-[#141413] dark:text-[#faf9f5] block text-[11px]">Stock</span>
+                  <span className="text-[9.5px] text-[#73726c] dark:text-[#a3a199]">Existencias ERP</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-2.5 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#2d2d2a] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={syncDimensions}
+                  onChange={(e) => setSyncDimensions(e.target.checked)}
+                  disabled={isRunning}
+                  className="w-3.5 h-3.5 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
+                />
+                <div className="leading-tight">
+                  <span className="font-bold text-[#141413] dark:text-[#faf9f5] block text-[11px]">Medidas/Peso</span>
+                  <span className="text-[9.5px] text-[#73726c] dark:text-[#a3a199]">Mercado Envíos</span>
+                </div>
+              </label>
+            </div>
+
             <Button
               variant="primary"
               size="lg"
@@ -134,6 +206,13 @@ export default function MeliSyncView({
             </Button>
           </div>
         </Card>
+
+        {/* Card de Diagnóstico de Cubicaje y Datos ERP */}
+        <CSVDiagnosticCard
+          preview={csvPreview}
+          onRefresh={loadPreview}
+          loading={loadingPreview}
+        />
       </div>
 
       {/* Columna Derecha: Estado de Sincronización en Tiempo Real */}

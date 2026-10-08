@@ -12,19 +12,39 @@ import {
 import Card from '../ui/Card';
 import Button from '../ui/Button';
 import Badge from '../ui/Badge';
-import { executeTiendanubeSync, fetchTiendanubeSyncStatus, uploadCSV } from '../../services/api';
+import CSVDiagnosticCard from '../common/CSVDiagnosticCard';
+import { executeTiendanubeSync, fetchTiendanubeSyncStatus, uploadCSV, fetchCSVPreview } from '../../services/api';
 
 export default function TiendaNubeSyncView({ onAddToast, onSyncFinished }) {
   const [marginPct, setMarginPct] = useState(0.0);
   const [syncPrices, setSyncPrices] = useState(true);
   const [syncStock, setSyncStock] = useState(true);
+  const [syncDimensions, setSyncDimensions] = useState(true);
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
+  const [csvPreview, setCsvPreview] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   // Sync Progress State
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState(null);
+
+  const loadPreview = async () => {
+    setLoadingPreview(true);
+    try {
+      const prev = await fetchCSVPreview();
+      if (prev) setCsvPreview(prev);
+    } catch {
+      // silent
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPreview();
+  }, []);
 
   useEffect(() => {
     let interval = setInterval(async () => {
@@ -49,8 +69,13 @@ export default function TiendaNubeSyncView({ onAddToast, onSyncFinished }) {
     setFile(selectedFile);
     setUploading(true);
     try {
-      await uploadCSV(selectedFile);
+      const res = await uploadCSV(selectedFile);
       setSyncStatus(`Archivo '${selectedFile.name}' cargado correctamente.`);
+      if (res?.preview) {
+        setCsvPreview(res.preview);
+      } else {
+        await loadPreview();
+      }
       if (onAddToast) {
         onAddToast('success', 'Archivo CSV Cargado', `Planilla '${selectedFile.name}' lista para procesar.`);
       }
@@ -70,7 +95,8 @@ export default function TiendaNubeSyncView({ onAddToast, onSyncFinished }) {
       await executeTiendanubeSync({
         margin_pct: parseFloat(marginPct) || 0.0,
         sync_prices: syncPrices,
-        sync_stock: syncStock
+        sync_stock: syncStock,
+        sync_dimensions: syncDimensions
       });
       if (onAddToast) {
         onAddToast('info', 'Sincronización Iniciada', 'Actualizando catálogo de Tiendanube en segundo plano...');
@@ -87,7 +113,7 @@ export default function TiendaNubeSyncView({ onAddToast, onSyncFinished }) {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* Columna Izquierda: Carga de Archivo & Parámetros */}
+      {/* Columna Izquierda: Carga de Archivo, Diagnóstico & Parámetros */}
       <div className="lg:col-span-5 flex flex-col gap-5">
         <Card
           title="Cargar Planilla de Precios (CSV)"
@@ -152,33 +178,47 @@ export default function TiendaNubeSyncView({ onAddToast, onSyncFinished }) {
               </div>
             </div>
 
-            {/* Switches de Operación */}
-            <div className="grid grid-cols-2 gap-3">
-              <label className="flex items-center gap-2.5 p-3 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#2d2d2a] transition-colors">
+            {/* Switches de Operación Independientes */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <label className="flex items-center gap-2 p-2.5 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#2d2d2a] transition-colors">
                 <input
                   type="checkbox"
                   checked={syncPrices}
                   onChange={(e) => setSyncPrices(e.target.checked)}
                   disabled={isRunning}
-                  className="w-4 h-4 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
+                  className="w-3.5 h-3.5 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
                 />
-                <div>
-                  <span className="font-bold text-[#141413] dark:text-[#faf9f5] block">Actualizar Precios</span>
-                  <span className="text-[10px] text-[#73726c] dark:text-[#a3a199]">Aplica descuentos</span>
+                <div className="leading-tight">
+                  <span className="font-bold text-[#141413] dark:text-[#faf9f5] block text-[11px]">Precios</span>
+                  <span className="text-[9.5px] text-[#73726c] dark:text-[#a3a199]">Aplica descuentos</span>
                 </div>
               </label>
 
-              <label className="flex items-center gap-2.5 p-3 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#2d2d2a] transition-colors">
+              <label className="flex items-center gap-2 p-2.5 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#2d2d2a] transition-colors">
                 <input
                   type="checkbox"
                   checked={syncStock}
                   onChange={(e) => setSyncStock(e.target.checked)}
                   disabled={isRunning}
-                  className="w-4 h-4 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
+                  className="w-3.5 h-3.5 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
                 />
-                <div>
-                  <span className="font-bold text-[#141413] dark:text-[#faf9f5] block">Actualizar Stock</span>
-                  <span className="text-[10px] text-[#73726c] dark:text-[#a3a199]">Sincroniza existencias</span>
+                <div className="leading-tight">
+                  <span className="font-bold text-[#141413] dark:text-[#faf9f5] block text-[11px]">Stock</span>
+                  <span className="text-[9.5px] text-[#73726c] dark:text-[#a3a199]">Existencias ERP</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-2.5 bg-[#faf9f5] dark:bg-[#262624] rounded-xl border border-[#e5e3dc] dark:border-[#363633] cursor-pointer hover:bg-[#f4f2eb] dark:hover:bg-[#2d2d2a] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={syncDimensions}
+                  onChange={(e) => setSyncDimensions(e.target.checked)}
+                  disabled={isRunning}
+                  className="w-3.5 h-3.5 rounded text-[#141413] dark:text-[#faf9f5] focus:ring-0"
+                />
+                <div className="leading-tight">
+                  <span className="font-bold text-[#141413] dark:text-[#faf9f5] block text-[11px]">Medidas/Peso</span>
+                  <span className="text-[9.5px] text-[#73726c] dark:text-[#a3a199]">Cubicaje variantes</span>
                 </div>
               </label>
             </div>
@@ -196,6 +236,13 @@ export default function TiendaNubeSyncView({ onAddToast, onSyncFinished }) {
             </Button>
           </div>
         </Card>
+
+        {/* Card de Diagnóstico de Cubicaje y Datos ERP */}
+        <CSVDiagnosticCard
+          preview={csvPreview}
+          onRefresh={loadPreview}
+          loading={loadingPreview}
+        />
       </div>
 
       {/* Columna Derecha: Estado de Sincronización en Tiempo Real */}
