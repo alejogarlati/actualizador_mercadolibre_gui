@@ -234,7 +234,7 @@ export default function App() {
       if (force) {
         data = await refreshItemsCache();
       } else {
-        data = await fetchItems(200, false);
+        data = await fetchItems(null, false);
       }
       setMeliItems(Array.isArray(data) ? data : []);
       setMeliLastUpdatedCatalog(new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }));
@@ -293,7 +293,7 @@ export default function App() {
         await refreshTiendanubeCatalog();
       }
       const [vars, cats] = await Promise.all([
-        fetchTiendanubeVariants('', null, 500, 0),
+        fetchTiendanubeVariants(),
         fetchTiendanubeCategories()
       ]);
       setTnVariants(Array.isArray(vars) ? vars : []);

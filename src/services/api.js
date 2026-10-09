@@ -66,12 +66,12 @@ export const fetchSyncStatus = async () => {
   }
 };
 
-export const fetchItems = async (limit = 50, forceRefresh = false) => {
+export const fetchItems = async (limit = null, forceRefresh = false) => {
   try {
-    const url = forceRefresh 
-      ? `${API_BASE_URL}/items?limit=${limit}&force_refresh=true`
-      : `${API_BASE_URL}/items?limit=${limit}`;
-    const res = await axios.get(url);
+    const params = {};
+    if (limit !== null && limit !== undefined) params.limit = limit;
+    if (forceRefresh) params.force_refresh = true;
+    const res = await axios.get(`${API_BASE_URL}/items`, { params });
     return res.data;
   } catch (err) {
     return [];
