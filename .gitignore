@@ -13,6 +13,16 @@ dist-ssr
 release
 *.local
 
+# Env files
+.env
+.env.*
+!.env.example
+
+# AI agent internal folders and notes
+.agents/
+skills-lock.json
+bugs.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

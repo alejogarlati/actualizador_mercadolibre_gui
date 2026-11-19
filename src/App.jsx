@@ -1113,7 +1113,7 @@ export default function App() {
 
                               <td className="py-3 px-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
-                                  {item.permalink && (
+                                  {typeof item.permalink === 'string' && /^https:\/\//i.test(item.permalink) && (
                                     <a 
                                       href={item.permalink} 
                                       target="_blank" 
@@ -2055,7 +2055,7 @@ export default function App() {
 
             {/* ACCIONES DEL MODAL */}
             <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-1">
-              {inspectingAuditItem.permalink ? (
+              {typeof inspectingAuditItem.permalink === 'string' && /^https:\/\//i.test(inspectingAuditItem.permalink) ? (
                 <a 
                   href={inspectingAuditItem.permalink} 
                   target="_blank" 

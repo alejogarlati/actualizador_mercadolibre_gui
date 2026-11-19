@@ -1,7 +1,17 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 
+function isSafeExternalUrl(rawUrl) {
+  try {
+    const parsed = new URL(rawUrl);
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 function createWindow() {
+  const isDev = process.env.NODE_ENV === 'development';
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -11,12 +21,27 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      webSecurity: false,
+      webSecurity: true,
     },
     autoHideMenuBar: true,
   });
 
-  const isDev = process.env.NODE_ENV === 'development';
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (isSafeExternalUrl(url)) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
+  });
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const allowedOrigin = isDev ? 'http://localhost:5173' : 'file://';
+    if (url.startsWith(allowedOrigin)) return;
+    event.preventDefault();
+    if (isSafeExternalUrl(url)) {
+      shell.openExternal(url);
+    }
+  });
+
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
   } else {

@@ -1,6 +1,6 @@
 # 🗺️ Roadmap del Sistema: Sincronizador Multicanal (Frontend & Backend)
 
-Este documento establece la hoja de ruta y planificación de hitos evolutivos para el ecosistema **Sincronizador & Actualizador Masivo** ([`actualizador_mercadolibre_gui`](./README.md) y [`actualizador_mercadolibre`](../actualizador_mercadolibre/README.md)).
+Este documento establece la hoja de ruta y planificación de hitos evolutivos para el ecosistema **Sincronizador & Actualizador Masivo** ([`actualizador_mercadolibre_gui`](./README.md) y `actualizador_mercadolibre`).
 
 ---
 
@@ -33,7 +33,7 @@ Integrar **Tiendanube** como segunda plataforma de venta oficial dentro del ecos
 ### ⚙️ FASES DE BACKEND
 
 #### 🔹 Fase B1: Dominio, Modelos y Configuración
-- [ ] **Configuración (.env y Settings):** Incorporación de variables `TN_STORE_ID`, `TN_ACCESS_TOKEN`, `TN_USER_AGENT`, `TN_APP_ID`, `TN_APP_SECRET` en [`config/settings.py`](../actualizador_mercadolibre/config/settings.py).
+- [ ] **Configuración (.env y Settings):** Incorporación de variables `TN_STORE_ID`, `TN_ACCESS_TOKEN`, `TN_USER_AGENT`, `TN_APP_ID`, `TN_APP_SECRET` en `config/settings.py`.
 - [ ] **Modelos de Dominio (`core/tiendanube_models.py`):** Dataclasses para `TNProduct`, `TNVariant`, `TNCategory`, `TNImage`, `TNCustomField` soportando campos multilingües (`dict[str, str]`).
 - [ ] **Esquemas de Validación Pydantic (`core/schemas.py`):** Schemas para request/response de alta, edición puntual, consulta de stock y cálculo de precios para Tiendanube.
 
@@ -80,7 +80,7 @@ Integrar **Tiendanube** como segunda plataforma de venta oficial dentro del ecos
 - [ ] **Rutas de Sincronización Masiva:**
   - `POST /tiendanube/sync/execute`: Disparo en background de la sincronización ERP -> Tiendanube.
   - `GET /tiendanube/sync/status`: Consulta del progreso del sync.
-- [ ] **Montaje Modular:** Inclusión del router en [`api/server.py`](../actualizador_mercadolibre/api/server.py) mediante `app.include_router(tiendanube_router, prefix="/tiendanube")`.
+- [ ] **Montaje Modular:** Inclusión del router en `api/server.py` mediante `app.include_router(tiendanube_router, prefix="/tiendanube")`.
 
 ---
 
